@@ -1,0 +1,128 @@
+---
+description: Automatically commit and push completed todo.md phases, or completed non-todo development steps.
+globs: ["**/*"]
+alwaysApply: true
+---
+
+# Agent Auto Git Workflow
+
+## Core Workflow
+
+When `todo.md` exists, do not commit or push after each task.
+
+Commit and push only when every task in the current phase is `[x]` or `[~]`. Fill that phase in `IDENTITY.md` first. Follow the project-todo phase git workflow. Include `todo.md` and `IDENTITY.md` in the phase commit.
+
+When working on a development task that is not tracked as a `todo.md` phase, complete the requested step before moving to the next step.
+
+After a non-todo step is completed:
+
+1. Review the changes made for the current step.
+2. Run the relevant tests, build, or validation commands.
+3. If validation fails, fix the issue before committing.
+4. Inspect `git status` and `git diff`.
+5. Stage only files related to the completed step.
+6. Create a Conventional Commit.
+7. Ensure a GitHub remote exists (create the repo if missing), then push the current branch.
+8. Confirm that the push command completed successfully.
+9. Only then continue to the next development step.
+
+## Commit Rules
+
+Use Conventional Commits.
+
+Format:
+
+<type>(<scope>): <description>
+
+Examples:
+
+feat(auth): add JWT authentication
+feat(vocabulary): add vocabulary entity
+fix(auth): resolve JWT validation error
+test(vocabulary): add vocabulary service tests
+refactor(vocabulary): simplify vocabulary service
+docs: update project documentation
+chore: update project configuration
+
+## Git Safety
+
+Never:
+
+- use `git add .` blindly
+- commit unrelated files
+- commit `.env` files
+- commit passwords, tokens, API keys, or secrets
+- use `git push --force`
+- use `git reset --hard` to discard changes
+- overwrite or remove unrelated user changes
+- amend previous commits unless explicitly requested
+- skip tests when relevant validation is available
+
+## Branch
+
+Use the current branch.
+
+For the personal automatic workflow, commits may be pushed directly to the current branch.
+
+Do not create release, hotfix, or develop branches unless explicitly requested.
+
+## Missing GitHub remote
+
+If `git remote -v` is empty, or push fails because `origin` does not exist, create the GitHub repo before continuing. Do not leave commits only on the local machine.
+
+1. Confirm `gh auth status` succeeds. If it fails, stop and report the exact error.
+2. Create the repo from the project folder name. Default private:
+
+   `gh repo create <folder-name> --private --source=. --remote=origin --push`
+
+   Use `--public` only when the user asked for a public repo.
+3. If the repo was created without `--push`, add origin and push:
+
+   `git remote add origin <url>`
+
+   `git push -u origin HEAD`
+4. Verify `git remote -v` and that the current branch tracks `origin`.
+5. If the name is already taken, stop and report the exact `gh` error. Do not invent a remote URL.
+
+## Failure Handling
+
+If tests or build fail:
+
+- Do not commit.
+- Fix the problem.
+- Run validation again.
+
+If `git commit` fails:
+
+- Do not continue to the next step.
+- Resolve the Git error.
+
+If `git push` fails because no remote exists:
+
+- Create the GitHub repo with `gh` as above, then push again.
+
+If `git push` or `gh repo create` still fails:
+
+- Do not continue to the next step.
+- Report the exact Git/`gh` error.
+
+## Step Completion
+
+When `todo.md` exists, a phase is complete only when:
+
+- Every task in that phase is `[x]` or `[~]`.
+- That phase in `IDENTITY.md` is filled (Work, User prompts, Skills used, Rules used, Outcome).
+- Relevant validation passes.
+- The phase files are committed, including `todo.md` and `IDENTITY.md`.
+- The commit is successfully pushed to GitHub.
+
+After a successful phase push, continue with the next incomplete phase.
+
+When work is not tracked as a `todo.md` phase, a development step is complete only when:
+
+- The requested implementation is finished.
+- Relevant validation passes.
+- The correct files are committed.
+- The commit is successfully pushed to GitHub.
+
+After successful push, continue with the next requested step automatically.
