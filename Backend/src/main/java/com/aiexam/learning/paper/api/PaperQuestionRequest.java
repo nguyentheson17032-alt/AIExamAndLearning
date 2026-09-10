@@ -1,0 +1,12 @@
+package com.aiexam.learning.paper.api;
+
+import jakarta.validation.constraints.DecimalMin;
+import jakarta.validation.constraints.NotNull;
+
+import java.math.BigDecimal;
+import java.util.UUID;
+
+public record PaperQuestionRequest(
+        @NotNull UUID questionId,
+        @NotNull @DecimalMin("0.01") BigDecimal points
+) {}

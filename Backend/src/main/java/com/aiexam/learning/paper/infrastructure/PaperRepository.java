@@ -1,0 +1,24 @@
+package com.aiexam.learning.paper.infrastructure;
+
+import com.aiexam.learning.paper.domain.Paper;
+import com.aiexam.learning.paper.domain.PaperKind;
+import com.aiexam.learning.question.domain.ContentStatus;
+import org.springframework.data.domain.Page;
+import org.springframework.data.domain.Pageable;
+import org.springframework.data.jpa.repository.EntityGraph;
+import org.springframework.data.jpa.repository.JpaRepository;
+
+import java.util.Optional;
+import java.util.UUID;
+
+public interface PaperRepository extends JpaRepository<Paper, UUID> {
+
+    @EntityGraph(attributePaths = {"items", "items.question", "items.question.choices", "subject"})
+    Optional<Paper> findWithItemsById(UUID id);
+
+    Page<Paper> findBySubjectIdAndStatus(UUID subjectId, ContentStatus status, Pageable pageable);
+
+    Page<Paper> findByKindAndStatus(PaperKind kind, ContentStatus status, Pageable pageable);
+
+    Page<Paper> findByStatus(ContentStatus status, Pageable pageable);
+}
