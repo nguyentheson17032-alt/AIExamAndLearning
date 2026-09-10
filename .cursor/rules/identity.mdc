@@ -1,0 +1,36 @@
+---
+description: Create and update IDENTITY.md to log work, user prompts, skills, and rules per todo.md phase.
+alwaysApply: true
+---
+
+# IDENTITY.md Workflow
+
+When starting a new project or a development task that has `todo.md`:
+
+1. Create `IDENTITY.md` at the project root if it does not exist.
+2. Mirror the phase headings from `todo.md`.
+3. Follow the `identity` skill for file structure.
+
+Do not start implementing before `IDENTITY.md` exists, unless the user explicitly asks to skip it.
+
+## File Location
+
+`IDENTITY.md` at the project root (same level as `todo.md`).
+
+This file is a collaboration log. It is not an authentication or Identity module.
+
+## When to Update
+
+- When the user sends a prompt that drives work in the current phase: append that prompt under the phase.
+- When a phase completes: fill Work, Skills used, Rules used, and Outcome **before** committing.
+- When a new phase is added to `todo.md`: add the matching `IDENTITY.md` section.
+
+Do not rewrite earlier completed phases unless correcting a factual error.
+
+## Git
+
+`IDENTITY.md` updates for a completed phase belong in the same commit as that phase.
+
+## When to Skip
+
+Skip only when the user explicitly asks to skip `IDENTITY.md`.

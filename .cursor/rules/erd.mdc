@@ -1,0 +1,34 @@
+---
+description: Create ERD.md before implementing any project that persists data.
+alwaysApply: true
+---
+
+# ERD.md Workflow
+
+When starting a new project that stores data (backend, database, entities, or persistent models):
+
+1. Analyze the domain and identify entities, attributes, and relationships.
+2. Create `ERD.md` at the project root.
+3. Model the schema visually with a Mermaid `erDiagram`.
+4. Follow the `erd` skill for file structure and notation.
+
+Do not create tables, JPA/ORM entities, repositories, or migrations before `ERD.md` exists, unless the user explicitly asks to skip it.
+
+## File Location
+
+`ERD.md` at the project root (same level as `todo.md`).
+
+## When to Skip
+
+Skip `ERD.md` only when:
+
+- The project has no persistent data (for example frontend-only with no backend).
+- The user explicitly asks to skip it.
+
+If persistence is added later, create `ERD.md` before any schema work.
+
+## Keep in Sync
+
+Update `ERD.md` before changing the schema: new entities, removed entities, attribute changes, or relationship changes.
+
+Do not invent tables that are not in `ERD.md`.

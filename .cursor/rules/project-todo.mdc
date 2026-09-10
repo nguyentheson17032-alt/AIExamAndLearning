@@ -1,0 +1,220 @@
+---
+description: Automatically create and maintain todo.md and IDENTITY.md for every new project.
+globs: ["**/*"]
+alwaysApply: true
+---
+
+# Project Todo Workflow
+
+## Core Requirement
+
+When starting a new project or a new development task that does not already have a `todo.md` file:
+
+1. Analyze the user's requested project.
+2. Identify the major development phases.
+3. Create `todo.md` in the project root.
+4. Create `IDENTITY.md` in the project root. Follow the identity rule and `identity` skill.
+5. If the project persists data, create `ERD.md` in the project root before any database work. Follow the ERD rule and `erd` skill.
+6. Break the project into clear, executable tasks.
+7. Use `todo.md` as the source of truth for development progress.
+
+Do not start implementing the project before creating `todo.md` and `IDENTITY.md`, unless the user explicitly asks to skip them.
+
+Do not create tables, ORM entities, repositories, or migrations before `ERD.md` exists, unless the project has no persistent data or the user asks to skip the ERD.
+
+## Project Folder Structure
+
+When creating a new project, create application folders at the project root based on what the user requested:
+
+- Frontend only → create a `Frontend` folder
+- Backend only → create a `Backend` folder
+- Both backend and frontend → create both `Frontend` and `Backend` folders
+
+Do not create a folder the user did not request.
+
+Add a corresponding setup task in Phase 1 of `todo.md` for each folder that is required.
+
+## Todo File Location
+
+The file must always be:
+
+todo.md
+
+located at the project root.
+
+## IDENTITY File Location
+
+Also create:
+
+IDENTITY.md
+
+located at the project root, when creating `todo.md`.
+
+Do not add "create IDENTITY.md" as a later task. Update it during each phase and fill the completed phase before committing.
+
+## ERD File Location
+
+If the project persists data, also create:
+
+ERD.md
+
+located at the project root, before Phase 2 (Database) implementation.
+
+Do not add "create ERD.md" as a later database task. The file must exist before schema work starts.
+
+## Todo Structure
+
+Use this structure:
+
+# TODO
+
+## Phase 1: Project Setup
+
+- [ ] Task description
+- [ ] Task description
+
+## Phase 2: Database
+
+- [ ] Task description
+- [ ] Task description
+
+## Phase 3: Backend
+
+- [ ] Task description
+- [ ] Task description
+
+## Phase 4: Authentication
+
+- [ ] Task description
+- [ ] Task description
+
+## Phase 5: API
+
+- [ ] Task description
+- [ ] Task description
+
+## Phase 6: Testing
+
+- [ ] Task description
+- [ ] Task description
+
+## Phase 7: Documentation
+
+- [ ] Task description
+
+## Task Rules
+
+Each task must:
+
+- Be specific.
+- Be independently implementable.
+- Be small enough to complete and validate.
+- Have a clear completion condition.
+- Avoid combining unrelated features into one task.
+
+Prefer:
+
+- [ ] Create User entity
+- [ ] Create UserRepository
+- [ ] Create UserService
+- [ ] Create UserController
+- [ ] Add User API tests
+
+Avoid:
+
+- [ ] Complete user system
+
+## Development Workflow
+
+Before implementing a task:
+
+1. Read `todo.md`.
+2. Identify the next incomplete task.
+3. Implement only that task.
+4. Run relevant validation.
+5. If validation succeeds, mark the task as completed in `todo.md`.
+6. Append the driving user prompt and work notes to the current phase in `IDENTITY.md`.
+7. If the current phase still has incomplete tasks (`[ ]`), continue with the next incomplete task. Do not commit or push yet.
+8. If every task in the current phase is `[x]` or `[~]`, finish that phase in `IDENTITY.md`, then commit and push the completed phase, then continue to the next phase.
+
+## Updating todo.md
+
+When a task is successfully completed:
+
+Change:
+
+- [ ] Task
+
+to:
+
+- [x] Task
+
+Do not mark a task as completed if its implementation or validation has failed.
+
+## Task Order
+
+Work through tasks from top to bottom.
+
+Do not skip incomplete tasks unless:
+
+- The task is blocked.
+- The user explicitly requests a different task.
+- The task is no longer required.
+
+If a task becomes unnecessary, mark it:
+
+- [~] Task
+
+and add a short reason.
+
+## Scope Control
+
+Do not add unrelated tasks to `todo.md`.
+
+If new requirements are explicitly requested by the user, add them to the appropriate phase.
+
+Do not rewrite the entire `todo.md` unnecessarily.
+
+Modify only the relevant section.
+
+## Git Integration
+
+Do not commit or push after each individual task.
+
+Commit and push only when a phase is complete.
+
+A phase is complete when every task under that phase heading is `[x]` or `[~]`.
+
+When a phase is complete:
+
+1. Confirm every task in that phase is marked `[x]` or `[~]` in `todo.md`.
+2. Fill Work, Skills used, Rules used, and Outcome for that phase in `IDENTITY.md`.
+3. Inspect the changes for that phase.
+4. Run relevant tests or validation.
+5. Stage only files related to the completed phase, including `todo.md` and `IDENTITY.md`.
+6. Create one Conventional Commit for the phase.
+7. Push to the current Git branch.
+8. Continue to the next incomplete phase.
+
+Example:
+
+Phase 4: Authentication is complete.
+
+Commit:
+
+feat(auth): complete authentication phase
+
+The `todo.md` and `IDENTITY.md` updates for that phase belong in the same commit.
+
+Do not start the next phase until the completed phase has been committed and pushed.
+
+## Completion
+
+A project is complete only when:
+
+- All required tasks in `todo.md` are completed.
+- Every completed phase in `IDENTITY.md` is filled.
+- Relevant tests pass.
+- No required task remains incomplete.
+- All completed work has been committed.
+- All commits have been successfully pushed.
