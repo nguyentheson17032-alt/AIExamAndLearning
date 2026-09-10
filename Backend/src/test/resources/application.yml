@@ -1,0 +1,15 @@
+spring:
+  ai:
+    openai:
+      api-key: test
+app:
+  jwt:
+    secret: MDEyMzQ1Njc4OWFiY2RlZjAxMjM0NTY3ODlhYmNkZWY=
+    access-token-expiration: 15m
+    refresh-token-expiration: 7d
+  elo:
+    default-rating: 1000
+    k-factor: 24
+  ai:
+    enabled: false
+    model-name: heuristic
