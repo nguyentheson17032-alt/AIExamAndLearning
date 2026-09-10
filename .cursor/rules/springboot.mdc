@@ -1,0 +1,323 @@
+---
+description: Default Spring Boot 3.x / Java 17+ conventions. Feature packages, constructor injection, RFC 9457 errors, typed config, and Maven test validation. Does not change git commit timing.
+globs:
+  - "**/*.java"
+  - "**/pom.xml"
+  - "**/build.gradle*"
+  - "**/application*.yml"
+  - "**/application*.yaml"
+  - "**/application*.properties"
+alwaysApply: false
+---
+
+# Spring Boot defaults
+
+Follow the **existing** project layout, Boot version, and error contract when they already exist. These defaults apply only to new Spring Boot code.
+
+This rule does **not** control git. Commit and push follow `todo.md` phases / `git-auto-commit-push`. Before marking a task complete, run `./mvnw test` (or `mvn test`). Use `./mvnw verify` when the phase includes slice or integration tests.
+
+If the repo uses a `Backend` folder, the Spring Boot module lives there. Do not add a second Java root at the repo root.
+
+Align JPA entities with `ERD.md` at the project root. Do not add tables or entities that are not in the ERD.
+
+Use hexagonal, Modulith, or a `{success, data, error}` envelope **only** when the user asks or the project already uses them.
+
+## Layout
+
+Default packages are **by feature**, with layered responsibilities inside the feature.
+
+❌ BAD — global technical layers
+
+```
+com.example.app.controller.UserController
+com.example.app.service.UserService
+com.example.app.repository.UserRepository
+```
+
+✅ GOOD — feature packages
+
+```
+com.example.app.user.api            # controllers, request/response records
+com.example.app.user.domain         # services, entities, domain exceptions
+com.example.app.user.infrastructure # repositories, HTTP clients
+com.example.app.common              # cross-cutting config and exception advice
+```
+
+## Controllers and services
+
+Controllers: HTTP only. `@Valid` on request bodies. Never return JPA entities. Never inject repositories.
+
+Services: business logic and `@Transactional`. Constructor injection only (`final` + `@RequiredArgsConstructor`).
+
+Repositories: data access only.
+
+❌ BAD — logic, entity, and repository in the controller; field injection
+
+```java
+@RestController
+@RequestMapping("/api/users")
+public class UserController {
+    @Autowired
+    private UserRepository userRepository;
+
+    @PostMapping
+    public User create(@RequestBody User user) {
+        if (user.getEmail() == null || !user.getEmail().contains("@")) {
+            throw new IllegalArgumentException("Invalid email");
+        }
+        return userRepository.save(user);
+    }
+}
+```
+
+✅ GOOD — lean controller, DTO records, service owns rules
+
+```java
+@RestController
+@RequestMapping("/api/users")
+@RequiredArgsConstructor
+public class UserController {
+    private final UserService userService;
+
+    @PostMapping
+    public ResponseEntity<UserResponse> create(@Valid @RequestBody UserCreateRequest request) {
+        UserResponse body = userService.create(request);
+        return ResponseEntity.status(HttpStatus.CREATED).body(body);
+    }
+}
+
+public record UserCreateRequest(@Email @NotBlank String email) {}
+
+public record UserResponse(Long id, String email) {
+    public static UserResponse from(User user) {
+        return new UserResponse(user.getId(), user.getEmail());
+    }
+}
+
+@Service
+@RequiredArgsConstructor
+public class UserService {
+    private final UserRepository userRepository;
+
+    @Transactional
+    public UserResponse create(UserCreateRequest request) {
+        User saved = userRepository.save(User.from(request));
+        return UserResponse.from(saved);
+    }
+}
+```
+
+## Build and config
+
+Inherit `spring-boot-starter-parent` or the Boot BOM. Do not invent dependency versions. Do not pin a Boot version the project does not already use.
+
+Store settings in `application.yml` / env vars. Never hardcode secrets. Never commit `.env`.
+
+Group related settings in a `@ConfigurationProperties` **record** with `@Validated`. Register it via `@EnableConfigurationProperties` or `@ConfigurationPropertiesScan`. Do not use `@Data` on property types. Prefer `Duration` / `DataSize` over raw millis.
+
+❌ BAD — hardcoded URL, invented version, mutable `@Data` properties
+
+```xml
+<dependency>
+  <groupId>org.springframework.boot</groupId>
+  <artifactId>spring-boot-starter-web</artifactId>
+  <version>3.2.11</version>
+</dependency>
+```
+
+```java
+@Service
+public class ExternalClient {
+    public String call() {
+        return rest.getForObject("https://api.example.com", String.class);
+    }
+}
+
+@Configuration
+@ConfigurationProperties(prefix = "app.client")
+@Data
+public class ClientProperties {
+    private String baseUrl;
+    private int timeoutMs;
+    private String apiToken;
+}
+```
+
+✅ GOOD — BOM-managed deps, typed record, YAML with units
+
+```xml
+<parent>
+  <groupId>org.springframework.boot</groupId>
+  <artifactId>spring-boot-starter-parent</artifactId>
+  <version>${revision}</version>
+  <relativePath/>
+</parent>
+<dependencies>
+  <dependency>
+    <groupId>org.springframework.boot</groupId>
+    <artifactId>spring-boot-starter-web</artifactId>
+  </dependency>
+</dependencies>
+```
+
+```yaml
+app:
+  client:
+    base-url: https://api.example.com
+    timeout: 5s
+```
+
+```java
+@ConfigurationProperties(prefix = "app.client")
+@Validated
+public record ClientProperties(
+    @NotBlank String baseUrl,
+    @NotNull Duration timeout
+) {}
+
+@Service
+@RequiredArgsConstructor
+public class ExternalClient {
+    private final ClientProperties properties;
+    private final RestClient restClient;
+
+    public String call() {
+        return restClient.get()
+            .uri(properties.baseUrl())
+            .retrieve()
+            .body(String.class);
+    }
+}
+```
+
+Keep `${revision}` / parent version equal to the project's current Boot version. Do not "upgrade" it in passing.
+
+## API and errors
+
+One error policy per API. Default for new APIs: RFC 9457. Return `ProblemDetail`, not a custom `{status, message}` record. Keep domain exceptions free of HTTP types unless the project already uses `@ResponseStatus`.
+
+❌ BAD — ad-hoc body, HTTP types on the domain, success envelope invented for a new API
+
+```yaml
+# missing spring.mvc.problemdetails.enabled
+```
+
+```java
+@ResponseStatus(HttpStatus.NOT_FOUND)
+public class UserNotFoundException extends RuntimeException {
+    public UserNotFoundException(Long id) {
+        super("Could not find user " + id);
+    }
+}
+
+@ControllerAdvice
+public class GlobalExceptionHandler {
+    @ExceptionHandler(UserNotFoundException.class)
+    public ResponseEntity<Map<String, Object>> handle(UserNotFoundException ex) {
+        return ResponseEntity.status(404).body(Map.of(
+            "success", false,
+            "message", ex.getMessage()
+        ));
+    }
+}
+```
+
+✅ GOOD — Problem Details + domain exception without HTTP
+
+```yaml
+spring:
+  mvc:
+    problemdetails:
+      enabled: true
+```
+
+```java
+public class UserNotFoundException extends RuntimeException {
+    public UserNotFoundException(Long id) {
+        super("Could not find user " + id);
+    }
+}
+
+@RestControllerAdvice
+public class GlobalExceptionHandler extends ResponseEntityExceptionHandler {
+
+    @ExceptionHandler(UserNotFoundException.class)
+    public ProblemDetail handleNotFound(UserNotFoundException ex) {
+        ProblemDetail problem = ProblemDetail.forStatusAndDetail(HttpStatus.NOT_FOUND, ex.getMessage());
+        problem.setTitle("Not Found");
+        problem.setType(URI.create("https://api.example.com/errors/user-not-found"));
+        problem.setProperty("errorCode", "USER_NOT_FOUND");
+        return problem;
+    }
+}
+```
+
+## Logging and tests
+
+SLF4J + `@Slf4j`. Parameterized messages only. Never `System.out`.
+
+- Unit: `@ExtendWith(MockitoExtension.class)`, `@Mock`, `@InjectMocks`. No `MockitoAnnotations.openMocks`.
+- Slice: `@WebMvcTest` / `@DataJpaTest` with `@MockitoBean` (not `@MockBean`).
+- Integration: `@SpringBootTest` plus Testcontainers. Do not call `@WebMvcTest` an integration test.
+- Name tests `method_condition_expected`. Prefer AssertJ.
+
+❌ BAD — string concat, manual Mockito init, `@MockBean`, wrong test type name
+
+```java
+public void process(String data) {
+    System.out.println("Processing data: " + data);
+    log.info("Processing data: " + data);
+}
+
+class UserServiceTest {
+    @Mock UserRepository users;
+    @InjectMocks UserService service;
+
+    @BeforeEach
+    void setUp() {
+        MockitoAnnotations.openMocks(this);
+    }
+
+    @Test
+    void testFind() { ... }
+}
+
+@WebMvcTest(UserController.class)
+class UserControllerIntegrationTest {
+    @MockBean UserService userService;
+}
+```
+
+✅ GOOD — placeholders, MockitoExtension, slice vs unit, `@MockitoBean`
+
+```java
+@Service
+@Slf4j
+public class UserService {
+    public void process(String data) {
+        log.info("Processing data: {}", data);
+    }
+}
+
+@ExtendWith(MockitoExtension.class)
+class UserServiceTest {
+    @Mock UserRepository users;
+    @InjectMocks UserService service;
+
+    @Test
+    void findById_whenMissing_throwsNotFound() {
+        when(users.findById(2L)).thenReturn(Optional.empty());
+        assertThatThrownBy(() -> service.findById(2L))
+            .isInstanceOf(UserNotFoundException.class);
+    }
+}
+
+@WebMvcTest(UserController.class)
+class UserControllerTest {
+    @Autowired MockMvc mockMvc;
+    @MockitoBean UserService userService;
+
+    @Test
+    void create_withValidRequest_returns201() throws Exception { ... }
+}
+```

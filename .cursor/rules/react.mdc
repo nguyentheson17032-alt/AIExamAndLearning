@@ -1,0 +1,44 @@
+---
+description: Project-level React / Next.js defaults. Layout, stack, and which react-best-practice skill to open. Detailed patterns live in those skills, not here.
+globs:
+  - "**/*.tsx"
+  - "**/*.jsx"
+  - "**/*.css"
+  - "**/next.config.*"
+  - "**/app/**"
+  - "**/pages/**"
+  - "**/components/**"
+alwaysApply: false
+---
+
+# React defaults
+
+This file is **project overview only**. Do not copy Vercel rule examples into new code from memory. Open the matching skill under `skills/react-best-practice/.agents/skills/` and follow its `SKILL.md` plus the specific files in `rules/` (or `references/`).
+
+Follow the **existing** app layout, React/Next version, and data-fetching library. These defaults apply only to new React / Next.js code.
+
+This rule does **not** control git. Commit and push follow `todo.md` phases / `git-auto-commit-push`.
+
+If the repo uses a `Frontend` folder, the React app lives there. Do not add a second app root at the repo root.
+
+Do not add React Query, SWR, Framer Motion, or a UI kit the project does not already use.
+
+## Which skill to open
+
+Read `SKILL.md` first, then only the rule files that match the task.
+
+| Task | Skill |
+|---|---|
+| Write, review, or speed up React / Next.js (fetch, bundle, RSC, re-renders) | `vercel-react-best-practices` |
+| Component APIs, boolean props, compound components, React 19 | `vercel-composition-patterns` |
+| Page / shared-element / list animations | `vercel-react-view-transitions` |
+| React Native / Expo | `vercel-react-native-skills` |
+| UI / a11y / UX audit | `web-design-guidelines` |
+| Docs voice and tone | `writing-guidelines` |
+| Deploy preview or production to Vercel | `deploy-to-vercel` |
+| Vercel CLI with `VERCEL_TOKEN` | `vercel-cli-with-tokens` |
+| Vercel cost, metrics, slow or expensive routes | `vercel-optimize` |
+
+When generating or refactoring React/Next.js, apply `vercel-react-best-practices` in its listed priority (waterfalls → bundle → server → client fetch → re-renders). Add `vercel-composition-patterns` when designing reusable component APIs.
+
+Do not load React Native, View Transition, deploy, or optimize skills unless the task is that domain.
