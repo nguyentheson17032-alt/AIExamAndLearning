@@ -519,14 +519,33 @@ Log of user–AI collaboration per `todo.md` phase: work done, user prompts, ski
 
 ## Phase 18: Sequential Exam Frontend
 
-**Status:** pending
+**Status:** completed
 
 ### Work
 
+- Added `/exam-sets` and `/exam-sets/[id]` so students pick a bộ đề then a đề
+- Take-exam wizard: one phần/câu (or Phần II group) at a time, Next/Trước, answer inputs, submit on the last step
+- After GRADED, "Xem chi tiết lời giải" at `/attempts/[id]/solutions`
+- Added `examSteps` helper + unit test; Home/nav link "Bộ đề"
+
 ### User prompts
+
+1. Same TS10 học/thi request as Phase 15
 
 ### Skills used
 
+- `identity` — fill this phase before commit
+- `project-todo` — Phase 18 tasks
+- `vercel-react-best-practices` — hidden form sections still submit all answers; QuestionPrompt is not nested inside TakeExamForm
+
 ### Rules used
 
+- `project-todo.mdc` — frontend last
+- `karpathy-guidelines.mdc` — sequential UI without extra libraries
+- `agent-auto-git.mdc` — commit only when the phase is complete
+
 ### Outcome
+
+- All Phase 18 tasks marked `[x]`
+- `npm test` and `npm run build` passed
+- Planned commit: `feat(frontend): sequential exam-set taking and solutions`

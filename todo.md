@@ -129,7 +129,7 @@
 
 ## Phase 18: Sequential Exam Frontend
 
-- [ ] Add exam-set list and exam-list pages
-- [ ] Take an exam one part and one question at a time with Next
-- [ ] Add answer input and submit for AI/auto grading
-- [ ] Show detailed solutions after the exam is finished
+- [x] Add exam-set list and exam-list pages
+- [x] Take an exam one part and one question at a time with Next
+- [x] Add answer input and submit for AI/auto grading
+- [x] Show detailed solutions after the exam is finished

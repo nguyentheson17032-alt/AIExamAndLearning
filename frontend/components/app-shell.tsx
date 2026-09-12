@@ -15,6 +15,7 @@ export function AppShell({
   const links: NavItem[] = user
     ? [
         { href: "/", label: "Home" },
+        { href: "/exam-sets", label: "Bộ đề" },
         { href: "/papers", label: "Papers" },
         { href: "/practice", label: "Practice" },
         { href: "/attempts", label: "Attempts" },

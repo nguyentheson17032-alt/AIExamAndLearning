@@ -21,6 +21,10 @@ export default async function HomePage() {
         description={`${profile.rankCode} · Elo ${profile.eloRating} · ${profile.role}`}
       />
       <div className="grid gap-4 sm:grid-cols-3">
+        <Link href="/exam-sets" className="rounded-xl border border-line bg-card p-5 hover:border-accent">
+          <h2 className="font-medium">Bộ đề tuyển sinh 10</h2>
+          <p className="mt-1 text-sm text-muted">Chọn bộ đề, rồi làm từng đề theo từng phần và từng câu.</p>
+        </Link>
         <Link href="/practice" className="rounded-xl border border-line bg-card p-5 hover:border-accent">
           <h2 className="font-medium">Practice by Elo</h2>
           <p className="mt-1 text-sm text-muted">Adaptive set matched to your current rating.</p>

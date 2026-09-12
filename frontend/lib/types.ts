@@ -101,6 +101,10 @@ export type PaperItem = {
   questionId: string;
   sortOrder: number;
   points: number;
+  sectionCode: "PART_I" | "PART_II" | "PART_III" | null;
+  sectionTitle: string | null;
+  itemLabel: string | null;
+  groupKey: string | null;
   question: Question;
 };
 
@@ -108,6 +112,8 @@ export type Paper = {
   id: string;
   authorId: string;
   subjectId: string;
+  paperSetId: string | null;
+  examNumber: number | null;
   title: string;
   description: string | null;
   kind: PaperKind;
@@ -118,6 +124,27 @@ export type Paper = {
   status: ContentStatus;
   questions: PaperItem[];
   createdAt: string;
+};
+
+export type PaperSetItem = {
+  id: string;
+  examNumber: number | null;
+  title: string;
+  durationMinutes: number;
+  questionCount: number;
+};
+
+export type PaperSet = {
+  id: string;
+  authorId: string;
+  subjectId: string;
+  title: string;
+  academicYear: string | null;
+  description: string | null;
+  status: ContentStatus;
+  paperCount: number;
+  createdAt: string;
+  papers: PaperSetItem[];
 };
 
 export type AttemptAnswer = {
