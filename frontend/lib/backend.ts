@@ -1,10 +1,6 @@
+import { redirect } from "next/navigation";
 import { problemMessage, readProblem } from "./problem";
-import {
-  clearSession,
-  getAccessToken,
-  getRefreshToken,
-  persistAuth,
-} from "./session";
+import { getAccessToken, getRefreshToken, persistAuth } from "./session";
 import type { AuthResponse } from "./types";
 
 const BACKEND_URL = process.env.BACKEND_URL ?? "http://localhost:8080";
@@ -42,11 +38,14 @@ async function refreshAccessToken(): Promise<string | null> {
     cache: "no-store",
   });
   if (!response.ok) {
-    await clearSession();
     return null;
   }
   const auth = (await response.json()) as AuthResponse;
-  await persistAuth(auth);
+  try {
+    await persistAuth(auth);
+  } catch {
+    // Server Components cannot write cookies; the new token is still used for this request.
+  }
   return auth.accessToken;
 }
 
@@ -75,6 +74,7 @@ export async function backendFetch<T>(
     if (nextToken) {
       return backendFetch<T>(path, init, false);
     }
+    redirect("/api/session/clear");
   }
 
   if (response.status === 204) {
