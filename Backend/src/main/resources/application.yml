@@ -31,10 +31,17 @@ spring:
         max-page-size: 100
   ai:
     openai:
-      api-key: ${OPENAI_API_KEY:}
+      api-key: ${OPENAI_API_KEY:sk-not-configured}
       chat:
         options:
           model: ${OPENAI_MODEL:gpt-4o-mini}
+    model:
+      embedding: none
+      image: none
+      moderation: none
+      audio:
+        speech: none
+        transcription: none
 
 server:
   port: ${SERVER_PORT:8080}
@@ -47,6 +54,8 @@ app:
   elo:
     default-rating: 1000
     k-factor: 24
+  seed:
+    ts10-exam-set: ${SEED_TS10:true}
   ai:
     enabled: ${APP_AI_ENABLED:false}
     model-name: ${OPENAI_MODEL:gpt-4o-mini}

@@ -489,17 +489,33 @@ Log of user–AI collaboration per `todo.md` phase: work done, user prompts, ski
 
 ## Phase 17: TS10 2025-2026 Import
 
-**Status:** pending
+**Status:** completed
 
 ### Work
 
+- Extracted 30 TS10 2025–2026 exams from the Word file into `data/ts10-2025-2026.json` (34 items each: 12 MCQ, 16 đúng/sai, 6 short answer)
+- Added `Ts10ExamSetImporter` to create a published paper set with parts I–III
+- Seeded the set on startup when `app.seed.ts10-exam-set` is true (`SEED_TS10`, default true; tests set false)
+- Added `Ts10ExamBankTest` asserting 30 exams and Đề 1 Phần I keys
+
 ### User prompts
+
+1. Same TS10 học/thi request as Phase 15
 
 ### Skills used
 
+- `identity` — fill this phase before commit
+- `project-todo` — Phase 17 tasks
+
 ### Rules used
 
+- `project-todo.mdc` — import as its own phase
+- `agent-auto-git.mdc` — commit only when the phase is complete
+
 ### Outcome
+
+- All Phase 17 tasks marked `[x]`
+- Planned commit: `feat(seed): import TS10 2025-2026 exam set`
 
 ## Phase 18: Sequential Exam Frontend
 

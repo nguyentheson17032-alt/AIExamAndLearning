@@ -10,6 +10,8 @@ app:
   elo:
     default-rating: 1000
     k-factor: 24
+  seed:
+    ts10-exam-set: false
   ai:
     enabled: false
     model-name: heuristic

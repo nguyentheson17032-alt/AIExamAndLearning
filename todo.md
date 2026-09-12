@@ -123,9 +123,9 @@
 
 ## Phase 17: TS10 2025-2026 Import
 
-- [ ] Extract 30 exams from the Word file into import JSON
-- [ ] Import the exam set as published papers with parts I–III
-- [ ] Seed the exam set when the database is empty
+- [x] Extract 30 exams from the Word file into import JSON
+- [x] Import the exam set as published papers with parts I–III
+- [x] Seed the exam set when the database is empty
 
 ## Phase 18: Sequential Exam Frontend
 
