@@ -62,3 +62,47 @@
 ## Phase 7: Documentation
 
 - [x] Write Backend README with run instructions and API overview
+
+## Phase 8: Frontend Setup
+
+- [x] Create Frontend folder
+- [x] Initialize Next.js App Router with TypeScript
+- [x] Configure backend API URL and server fetch client
+- [x] Add app shell layout and global styles
+
+## Phase 9: Frontend Authentication
+
+- [x] Add login, register, and logout session cookies
+- [x] Protect authenticated routes
+- [x] Add login and register pages
+- [x] Show current user in the app shell
+
+## Phase 10: Catalog and Questions
+
+- [x] Add subject list and create subject form
+- [x] Add topic list and create topic form
+- [x] Add question list, create, and detail pages
+- [x] Add question batch upload page
+
+## Phase 11: Papers and Practice
+
+- [x] Add paper list, create, and generate pages
+- [x] Add start-attempt and take-exam flow
+- [x] Add attempt history and result pages
+- [x] Add Elo practice session page
+- [x] Add profile and rank page
+
+## Phase 12: AI Features
+
+- [x] Add AI classify and similar-question actions
+- [x] Add AI practice-paper generation
+- [x] Add AI Elo adjustment on graded attempts
+
+## Phase 13: Frontend Testing
+
+- [x] Add session helper tests
+- [x] Add API error parsing tests
+
+## Phase 14: Frontend Documentation
+
+- [x] Write Frontend README with run instructions

@@ -6,7 +6,7 @@ Log of user–AI collaboration per `todo.md` phase: work done, user prompts, ski
 
 - Name: AI Exam Warehouse
 - Started: 2026-09-11
-- Goal: Backend kho điểm thi — upload/ra đề, luyện theo Elo, và AI chấm/xếp hạng/sinh đề
+- Goal: Kho điểm thi — backend Spring Boot + frontend Next.js: upload/ra đề, luyện theo Elo, và AI chấm/xếp hạng/sinh đề
 
 ## Phase 1: Project Setup
 
@@ -224,3 +224,198 @@ Log of user–AI collaboration per `todo.md` phase: work done, user prompts, ski
 
 - All Phase 7 tasks marked `[x]`
 - Commit: `docs: complete documentation phase`
+
+## Phase 8: Frontend Setup
+
+**Status:** completed
+
+### Work
+
+- Created `Frontend/` Next.js 15 App Router app (TypeScript, Tailwind CSS, React 19)
+- Added `BACKEND_URL` via `.env.example` and a server `backendFetch` client
+- Added app shell, page header, empty/problem UI, and global styles
+- Production `npm run build` succeeds (Next 16.3 `_global-error` prerender bug on mixed-case Windows paths; pinned Next 15.5.9)
+
+### User prompts
+
+1. > @.cursor dựa vào folder này để làm frontend cho dự án
+
+### Skills used
+
+- `project-todo` — added frontend phases 8–14
+- `identity` — added matching IDENTITY.md sections
+- `vercel-react-best-practices` — App Router, parallel fetches, no extra data library
+- `git-auto-commit-push` — phase commit after setup
+
+### Rules used
+
+- `project-todo.mdc` — Frontend folder; new phases appended
+- `react.mdc` — Next.js in Frontend; no React Query/SWR/UI kit
+- `karpathy-guidelines.mdc` — no extra libraries beyond Next/Tailwind
+- `agent-auto-git.mdc` — commit after the phase
+
+### Outcome
+
+- All Phase 8 tasks marked `[x]`
+- `npm run build` passed
+- Commit: `feat(frontend): complete frontend setup phase`
+
+## Phase 9: Frontend Authentication
+
+**Status:** completed
+
+### Work
+
+- httpOnly cookies for access/refresh/user snapshot; login/register/logout server actions
+- middleware protects app routes; login/register remain public
+- Login and register pages; shell shows name, rank, Elo, logout
+
+### User prompts
+
+1. > @.cursor dựa vào folder này để làm frontend cho dự án
+
+### Skills used
+
+- `vercel-react-best-practices` — authenticate mutations in server actions
+- `vercel-composition-patterns` — login/register as separate forms, not boolean modes
+
+### Rules used
+
+- `react.mdc` — no SWR; cookies versioned `ew_*_v1`
+- `agent-auto-git.mdc` — phase commit
+
+### Outcome
+
+- All Phase 9 tasks marked `[x]`
+- Commit: `feat(auth): complete frontend authentication phase`
+
+## Phase 10: Catalog and Questions
+
+**Status:** completed
+
+### Work
+
+- Subject list/create and topic create on subject detail
+- Question list, create, detail, archive, JSON batch upload
+
+### User prompts
+
+1. > @.cursor dựa vào folder này để làm frontend cho dự án
+
+### Skills used
+
+- `vercel-react-best-practices` — RSC pages, server actions for mutations
+
+### Rules used
+
+- `react.mdc` — feature pages in Frontend only
+
+### Outcome
+
+- All Phase 10 tasks marked `[x]`
+- Commit: `feat(questions): complete catalog and questions UI`
+
+## Phase 11: Papers and Practice
+
+**Status:** completed
+
+### Work
+
+- Paper list/create/generate; start attempt; take-exam form; results
+- Elo practice session; profile/rank and Elo history
+
+### User prompts
+
+1. > @.cursor dựa vào folder này để làm frontend cho dự án
+
+### Skills used
+
+- `vercel-react-best-practices` — Promise.all for independent page data
+
+### Rules used
+
+- `react.mdc` — native forms, no UI kit
+
+### Outcome
+
+- All Phase 11 tasks marked `[x]`
+- Commit: `feat(papers): complete papers and practice UI`
+
+## Phase 12: AI Features
+
+**Status:** completed
+
+### Work
+
+- Classify and similar-question actions on question detail
+- AI practice paper generator
+- AI Elo adjustment on graded attempts
+
+### User prompts
+
+1. > @.cursor dựa vào folder này để làm frontend cho dự án
+
+### Skills used
+
+- `vercel-react-best-practices` — useTransition for AI button actions
+
+### Rules used
+
+- `react.mdc` — teacher-only AI paper/classify routes
+
+### Outcome
+
+- All Phase 12 tasks marked `[x]`
+- Commit: `feat(ai): complete frontend AI features`
+
+## Phase 13: Frontend Testing
+
+**Status:** completed
+
+### Work
+
+- Node test runner coverage for RFC 9457 problem parsing and staff-role helper
+
+### User prompts
+
+1. > @.cursor dựa vào folder này để làm frontend cho dự án
+
+### Skills used
+
+- `project-todo` — testing phase tasks
+
+### Rules used
+
+- `agent-auto-git.mdc` — tests before the phase commit
+
+### Outcome
+
+- All Phase 13 tasks marked `[x]`
+- `npm test` — 3 tests passed
+- Commit: `test(frontend): complete frontend testing phase`
+
+## Phase 14: Frontend Documentation
+
+**Status:** completed
+
+### Work
+
+- Wrote `Frontend/README.md` with stack, run steps, seed accounts, and feature list
+
+### User prompts
+
+1. > @.cursor dựa vào folder này để làm frontend cho dự án
+
+### Skills used
+
+- `project-todo` — documentation phase
+- `git-auto-commit-push` — phase commit and push
+
+### Rules used
+
+- `project-todo.mdc` — README as the documentation task
+
+### Outcome
+
+- All Phase 14 tasks marked `[x]`
+- Commit: `docs(frontend): complete frontend documentation phase`

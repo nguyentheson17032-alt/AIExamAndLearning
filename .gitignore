@@ -18,3 +18,7 @@ Thumbs.db
 *.p12
 *.jks
 Backend/target/
+Frontend/node_modules/
+Frontend/.next/
+Frontend/out/
+Frontend/.turbo/
