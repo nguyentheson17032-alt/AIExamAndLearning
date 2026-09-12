@@ -419,3 +419,79 @@ Log of user–AI collaboration per `todo.md` phase: work done, user prompts, ski
 
 - All Phase 14 tasks marked `[x]`
 - Commit: `docs(frontend): complete frontend documentation phase`
+
+## Phase 15: Exam Set Schema
+
+**Status:** completed
+
+### Work
+
+- Updated `ERD.md` with `PAPER_SET` (academic year, title, subject, author) and `PAPER.paper_set_id` / `exam_number`
+- Added `PAPER_QUESTION` section fields: `section_code`, `section_title`, `item_label`, `group_key` for TS10 parts I–III
+- Added Flyway `V7__create_paper_sets.sql`
+- Created `PaperSet` entity and `PaperSetRepository`
+- Extended `Paper` and `PaperQuestion` with set membership and section metadata; added `PaperSection` enum
+
+### User prompts
+
+1. > tôi muốn đưa vào hệ thống học/thi,khi học sinh chọn 1 bộ đề thì sẽ hiện từng đề, khi học sinh chọn làm 1 đề thì hiện lần lượt từng phần,từng câu và bấm nút Next để sang câu tiếp theo,có ô để học sinh điền đáp án, phần đáp án để AI tự chấm điểm trên thang điểm 10 và cộng elo theo công thức lấy điểm chia 10, phần lời giải khi học sinh làm xong 1 đề rồi bấm xem chi tiết lời giải thì xem được và đây là bộ đề toán tuyển sinh 10 năm học 2025-2026, bạn hãy làm dựa vào @.cursor và giải thích
+
+### Skills used
+
+- `project-todo` — added Phases 15–18 for exam sets
+- `identity` — this phase log
+- `erd` — PAPER_SET and section columns before schema work
+
+### Rules used
+
+- `project-todo.mdc` — new requirements go into todo.md phases
+- `erd.mdc` — ERD.md before entities/migrations
+- `identity.mdc` — record the driving prompt and fill Outcome before commit
+- `agent-auto-git.mdc` — commit only when the phase is complete
+
+### Outcome
+
+- All Phase 15 tasks marked `[x]`
+- Planned commit: `feat(schema): add paper sets and exam section columns`
+
+## Phase 16: Exam Set Backend
+
+**Status:** pending
+
+### Work
+
+### User prompts
+
+### Skills used
+
+### Rules used
+
+### Outcome
+
+## Phase 17: TS10 2025-2026 Import
+
+**Status:** pending
+
+### Work
+
+### User prompts
+
+### Skills used
+
+### Rules used
+
+### Outcome
+
+## Phase 18: Sequential Exam Frontend
+
+**Status:** pending
+
+### Work
+
+### User prompts
+
+### Skills used
+
+### Rules used
+
+### Outcome

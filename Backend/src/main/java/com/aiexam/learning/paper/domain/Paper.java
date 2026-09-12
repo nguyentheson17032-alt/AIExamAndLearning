@@ -49,6 +49,13 @@ public class Paper {
     @JoinColumn(name = "subject_id", nullable = false)
     private Subject subject;
 
+    @ManyToOne(fetch = FetchType.LAZY)
+    @JoinColumn(name = "paper_set_id")
+    private PaperSet paperSet;
+
+    @Column(name = "exam_number")
+    private Integer examNumber;
+
     @Column(nullable = false)
     private String title;
 
@@ -113,8 +120,25 @@ public class Paper {
         return paper;
     }
 
+    public void assignToSet(PaperSet paperSet, int examNumber) {
+        this.paperSet = paperSet;
+        this.examNumber = examNumber;
+    }
+
     public void addQuestion(Question question, int sortOrder, BigDecimal points) {
-        items.add(PaperQuestion.create(this, question, sortOrder, points));
+        addQuestion(question, sortOrder, points, null, null, null, null);
+    }
+
+    public void addQuestion(
+            Question question,
+            int sortOrder,
+            BigDecimal points,
+            PaperSection section,
+            String sectionTitle,
+            String itemLabel,
+            String groupKey
+    ) {
+        items.add(PaperQuestion.create(this, question, sortOrder, points, section, sectionTitle, itemLabel, groupKey));
     }
 
     public void updateDetails(

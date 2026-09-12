@@ -106,3 +106,30 @@
 ## Phase 14: Frontend Documentation
 
 - [x] Write Frontend README with run instructions
+
+## Phase 15: Exam Set Schema
+
+- [x] Update ERD.md with PAPER_SET and paper question sections
+- [x] Add Flyway migration for paper_sets and paper section columns
+- [x] Create PaperSet entity and repository
+- [x] Extend Paper and PaperQuestion for set membership and sections
+
+## Phase 16: Exam Set Backend
+
+- [ ] Add PaperSet list and detail APIs
+- [ ] Grade TS10 papers on a 10-point scale (MCQ auto, đúng/sai group scale, short answer AI)
+- [ ] Apply Elo using score divided by 10
+- [ ] Add graded-attempt solution review API
+
+## Phase 17: TS10 2025-2026 Import
+
+- [ ] Extract 30 exams from the Word file into import JSON
+- [ ] Import the exam set as published papers with parts I–III
+- [ ] Seed the exam set when the database is empty
+
+## Phase 18: Sequential Exam Frontend
+
+- [ ] Add exam-set list and exam-list pages
+- [ ] Take an exam one part and one question at a time with Next
+- [ ] Add answer input and submit for AI/auto grading
+- [ ] Show detailed solutions after the exam is finished

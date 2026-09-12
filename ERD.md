@@ -2,7 +2,7 @@
 
 ## Overview
 
-PostgreSQL schema for the exam warehouse: users with Elo/rank, a question bank, papers (exams, assignments, practice sets), attempts, Elo history, AI classification, and AI generation jobs.
+PostgreSQL schema for the exam warehouse: users with Elo/rank, a question bank, paper sets (bộ đề), papers (exams, assignments, practice sets), attempts, Elo history, AI classification, and AI generation jobs.
 
 ## Diagram
 
@@ -17,6 +17,9 @@ erDiagram
     SUBJECT ||--o{ TOPIC : contains
     SUBJECT ||--o{ QUESTION : categorizes
     SUBJECT ||--o{ PAPER : categorizes
+    SUBJECT ||--o{ PAPER_SET : categorizes
+    USER ||--o{ PAPER_SET : authors
+    PAPER_SET ||--o{ PAPER : contains
     TOPIC ||--o{ QUESTION : groups
     QUESTION ||--o{ QUESTION_CHOICE : has
     QUESTION ||--o{ QUESTION_CLASSIFICATION : classified_as
@@ -112,10 +115,24 @@ erDiagram
         datetime classifiedAt
     }
 
+    PAPER_SET {
+        uuid id PK
+        uuid authorId FK
+        uuid subjectId FK
+        string title
+        string academicYear
+        string description
+        string status
+        datetime createdAt
+        datetime updatedAt
+    }
+
     PAPER {
         uuid id PK
         uuid authorId FK
         uuid subjectId FK
+        uuid paperSetId FK
+        int examNumber
         string title
         string description
         string kind
@@ -134,6 +151,10 @@ erDiagram
         uuid questionId FK
         int sortOrder
         decimal points
+        string sectionCode
+        string sectionTitle
+        string itemLabel
+        string groupKey
     }
 
     ATTEMPT {
@@ -287,6 +308,20 @@ erDiagram
 | model_name | string | NOT NULL | Model or heuristic |
 | classified_at | datetime | NOT NULL | Classification time |
 
+### PAPER_SET
+
+| Column | Type | Constraints | Description |
+| --- | --- | --- | --- |
+| id | UUID | PK | Unique identifier |
+| author_id | UUID | FK USER, NOT NULL | Creator |
+| subject_id | UUID | FK SUBJECT, NOT NULL | Subject |
+| title | string | NOT NULL | Set title (bộ đề) |
+| academic_year | string | | School year, e.g. 2025-2026 |
+| description | string | | Summary |
+| status | string | NOT NULL | DRAFT, PUBLISHED, ARCHIVED |
+| created_at | datetime | NOT NULL | Created time |
+| updated_at | datetime | NOT NULL | Updated time |
+
 ### PAPER
 
 | Column | Type | Constraints | Description |
@@ -294,6 +329,8 @@ erDiagram
 | id | UUID | PK | Unique identifier |
 | author_id | UUID | FK USER, NOT NULL | Creator (user or system actor) |
 | subject_id | UUID | FK SUBJECT, NOT NULL | Subject |
+| paper_set_id | UUID | FK PAPER_SET | Parent exam set; null for standalone papers |
+| exam_number | int | | Order inside the set (Đề số 1…) |
 | title | string | NOT NULL | Title |
 | description | string | | Summary |
 | kind | string | NOT NULL | EXAM, ASSIGNMENT, PRACTICE |
@@ -314,6 +351,10 @@ erDiagram
 | question_id | UUID | FK QUESTION, NOT NULL | Included question |
 | sort_order | int | NOT NULL | Question order |
 | points | decimal | NOT NULL | Score weight |
+| section_code | string | | PART_I, PART_II, PART_III |
+| section_title | string | | Display title of the part |
+| item_label | string | | Câu label, e.g. I.3 or II.1a |
+| group_key | string | | Groups Part II items into one on-screen câu |
 
 Unique: `(paper_id, question_id)`.
 
@@ -383,6 +424,9 @@ Unique: `(paper_id, question_id)`.
 | USER | REFRESH_TOKEN | 1:N | A user owns many refresh tokens |
 | USER | QUESTION | 1:N | A user authors many questions |
 | USER | PAPER | 1:N | A user authors many papers |
+| USER | PAPER_SET | 1:N | A user authors many exam sets |
+| SUBJECT | PAPER_SET | 1:N | A subject categorizes many exam sets |
+| PAPER_SET | PAPER | 1:N | A set contains ordered exams |
 | USER | ATTEMPT | 1:N | A user takes many attempts |
 | USER | ELO_EVENT | 1:N | A user has many Elo events |
 | USER | AI_GENERATION_JOB | 1:N | A user requests many AI jobs |
@@ -406,7 +450,9 @@ Unique: `(paper_id, question_id)`.
 - IDs are UUID. Enums are stored as VARCHAR (`STRING` in JPA).
 - Rank codes from Elo: `BRONZE` < 1000, `SILVER` 1000–1199, `GOLD` 1200–1399, `PLATINUM` 1400–1599, `DIAMOND` ≥ 1600. New users start at Elo 1000 / `SILVER`.
 - Index foreign keys and list filters: `users.email`, `questions.subject_id`, `questions.elo_rating`, `papers.kind`, `papers.target_elo_min/max`, `attempts.user_id`, `elo_events.user_id`.
-- Unique: `users.email`, `subjects.code`, `refresh_tokens.token_hash`, `paper_questions(paper_id, question_id)`.
+- Unique: `users.email`, `subjects.code`, `refresh_tokens.token_hash`, `paper_questions(paper_id, question_id)`, `papers(paper_set_id, exam_number)` when `paper_set_id` is set.
+- `PAPER_QUESTION.section_code` values: `PART_I` (12 multiple-choice × 0.25 = 3.0), `PART_II` (4 đúng/sai groups, official 0.1/0.25/0.5/1.0 scale, max 4.0), `PART_III` (6 short answers × 0.5 = 3.0). TS10 papers total 10 points. Elo uses `score / 10`.
+- `PAPER_QUESTION.group_key` lets the take-exam UI show one Part II câu (four ý a–d) as a single step.
 - Deleting a USER is not supported in v1 (accounts are disabled). Deleting a PAPER cascades to PAPER_QUESTION. Deleting a QUESTION that appears in papers is rejected at the service layer.
 - `QUESTION_CLASSIFICATION.tags` is a JSON array stored as TEXT.
 - `PAPER.kind` distinguishes exams, homework assignments, and generated practice sets.
