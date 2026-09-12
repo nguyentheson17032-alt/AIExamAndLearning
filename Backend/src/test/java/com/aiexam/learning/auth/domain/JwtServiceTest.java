@@ -67,4 +67,18 @@ class JwtServiceTest {
         String token = rawService.generateAccessToken(details);
         assertThat(rawService.validateAccessTokenAndGetSubject(token)).isEqualTo("student@exam.local");
     }
+
+    @Test
+    void generateAccessToken_whenSecretIsShortPassphrase_signsAndValidates() {
+        JwtService shortService = new JwtService(new JwtProperties(
+                "my_jwt_secret",
+                Duration.ofMinutes(15),
+                Duration.ofDays(7)
+        ));
+        AuthUserDetails details = new AuthUserDetails(
+                User.register("student@exam.local", "hash", "Student", UserRole.STUDENT, 1000));
+        String token = shortService.generateAccessToken(details);
+        assertThat(shortService.validateAccessTokenAndGetSubject(token)).isEqualTo("student@exam.local");
+        assertThat(JwtService.decodeSecret("my_jwt_secret")).hasSize(32);
+    }
 }

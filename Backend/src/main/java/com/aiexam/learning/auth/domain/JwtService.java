@@ -12,6 +12,8 @@ import org.springframework.stereotype.Service;
 
 import javax.crypto.SecretKey;
 import java.nio.charset.StandardCharsets;
+import java.security.MessageDigest;
+import java.security.NoSuchAlgorithmException;
 import java.time.Instant;
 import java.util.Date;
 import java.util.Map;
@@ -85,19 +87,34 @@ public class JwtService {
     }
 
     static byte[] decodeSecret(String secret) {
+        byte[] decoded = tryDecodeBase64(secret);
+        if (decoded != null && decoded.length >= 32) {
+            return decoded;
+        }
+        byte[] raw = secret.getBytes(StandardCharsets.UTF_8);
+        if (raw.length >= 32) {
+            return raw;
+        }
+        return sha256(raw);
+    }
+
+    private static byte[] tryDecodeBase64(String secret) {
         try {
             return Decoders.BASE64.decode(secret);
         } catch (DecodingException ignored) {
-            // URL-safe secrets use '-' and '_'; passphrases are raw UTF-8.
-        }
-        try {
-            byte[] urlDecoded = Decoders.BASE64URL.decode(secret);
-            if (urlDecoded.length >= 32) {
-                return urlDecoded;
+            try {
+                return Decoders.BASE64URL.decode(secret);
+            } catch (DecodingException ignoredUrl) {
+                return null;
             }
-        } catch (DecodingException ignored) {
-            // Fall through to the raw secret.
         }
-        return secret.getBytes(StandardCharsets.UTF_8);
+    }
+
+    private static byte[] sha256(byte[] input) {
+        try {
+            return MessageDigest.getInstance("SHA-256").digest(input);
+        } catch (NoSuchAlgorithmException ex) {
+            throw new IllegalStateException("SHA-256 is required to derive a JWT HMAC key", ex);
+        }
     }
 }
