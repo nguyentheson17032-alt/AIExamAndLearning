@@ -15,16 +15,13 @@ public interface AttemptRepository extends JpaRepository<Attempt, UUID> {
     @EntityGraph(attributePaths = {
             "answers",
             "answers.question",
-            "answers.question.choices",
             "paper",
-            "paper.items",
-            "paper.items.question",
-            "paper.items.question.choices",
             "user"
     })
     Optional<Attempt> findWithAnswersById(UUID id);
 
     Page<Attempt> findByUserId(UUID userId, Pageable pageable);
 
-    boolean existsByUserIdAndPaperIdAndStatus(UUID userId, UUID paperId, AttemptStatus status);
+    @EntityGraph(attributePaths = {"answers", "paper", "user"})
+    Optional<Attempt> findByUserIdAndPaperIdAndStatus(UUID userId, UUID paperId, AttemptStatus status);
 }

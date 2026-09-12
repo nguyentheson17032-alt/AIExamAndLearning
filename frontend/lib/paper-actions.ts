@@ -69,11 +69,16 @@ export async function generatePaperAction(
   redirect(`/papers/${paper.id}`);
 }
 
-export async function startAttemptAction(paperId: string): Promise<void> {
+export async function startAttemptAction(paperId: string): Promise<PaperFormState> {
   await requireUser();
-  const attempt = await backendFetch<Attempt>(`/api/v1/papers/${paperId}/attempts`, {
-    method: "POST",
-  });
+  let attempt: Attempt;
+  try {
+    attempt = await backendFetch<Attempt>(`/api/v1/papers/${paperId}/attempts`, {
+      method: "POST",
+    });
+  } catch (error) {
+    return { error: errorMessage(error, "Không bắt đầu được đề thi") };
+  }
   redirect(`/attempts/${attempt.id}`);
 }
 

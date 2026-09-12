@@ -14,7 +14,16 @@ import java.util.UUID;
 
 public interface PaperRepository extends JpaRepository<Paper, UUID> {
 
-    @EntityGraph(attributePaths = {"items", "items.question", "items.question.choices", "subject", "paperSet"})
+    @EntityGraph(attributePaths = {
+            "author",
+            "subject",
+            "paperSet",
+            "items",
+            "items.question",
+            "items.question.author",
+            "items.question.subject",
+            "items.question.topic"
+    })
     Optional<Paper> findWithItemsById(UUID id);
 
     Page<Paper> findBySubjectIdAndStatus(UUID subjectId, ContentStatus status, Pageable pageable);

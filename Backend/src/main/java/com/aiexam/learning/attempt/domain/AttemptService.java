@@ -53,11 +53,9 @@ public class AttemptService {
         if (paper.getStatus() != ContentStatus.PUBLISHED) {
             throw new BusinessRuleException("PAPER_NOT_PUBLISHED", "Paper is not published");
         }
-        if (attemptRepository.existsByUserIdAndPaperIdAndStatus(userId, paperId, AttemptStatus.IN_PROGRESS)) {
-            throw new BusinessRuleException("ATTEMPT_IN_PROGRESS", "An attempt is already in progress for this paper");
-        }
-        Attempt attempt = Attempt.start(user, paper);
-        return AttemptResponse.from(attemptRepository.save(attempt));
+        return attemptRepository.findByUserIdAndPaperIdAndStatus(userId, paperId, AttemptStatus.IN_PROGRESS)
+                .map(AttemptResponse::from)
+                .orElseGet(() -> AttemptResponse.from(attemptRepository.save(Attempt.start(user, paper))));
     }
 
     @Transactional
