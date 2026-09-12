@@ -456,17 +456,36 @@ Log of user–AI collaboration per `todo.md` phase: work done, user prompts, ski
 
 ## Phase 16: Exam Set Backend
 
-**Status:** pending
+**Status:** completed
 
 ### Work
 
+- Added `GET /api/v1/paper-sets` and `GET /api/v1/paper-sets/{id}` for published exam sets
+- Graded TS10 papers on a 10-point scale: Phần I auto MCQ (0.25), Phần II official đúng/sai group scale, Phần III AI/heuristic short answer
+- Applied Elo with `score / 10` via `Ts10Scoring.eloScore`
+- Added `GET /api/v1/attempts/{id}/solutions` after the attempt is graded
+- Added `PaperSetControllerTest` and `Ts10ScoringTest`
+
 ### User prompts
+
+1. Same TS10 học/thi request as Phase 15 (bộ đề → đề → từng câu, thang 10, Elo = điểm/10, lời giải)
 
 ### Skills used
 
+- `identity` — fill this phase before commit
+- `project-todo` — Phase 16 tasks
+
 ### Rules used
 
+- `project-todo.mdc` — implement the phase tasks, then commit
+- `karpathy-guidelines.mdc` — reuse existing attempt grading instead of a new subsystem
+- `agent-auto-git.mdc` — commit only when the phase is complete
+
 ### Outcome
+
+- All Phase 16 tasks marked `[x]`
+- `./mvnw.cmd test` passed (22 tests)
+- Planned commit: `feat(papers): add exam-set APIs and TS10 grading`
 
 ## Phase 17: TS10 2025-2026 Import
 

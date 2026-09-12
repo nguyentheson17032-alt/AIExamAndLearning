@@ -32,6 +32,11 @@ public class AttemptController {
         return attemptService.get(CurrentUser.id(), id);
     }
 
+    @GetMapping("/{id}/solutions")
+    public AttemptSolutionResponse solutions(@PathVariable UUID id) {
+        return attemptService.solutions(CurrentUser.id(), id);
+    }
+
     @PostMapping("/{id}/submit")
     public AttemptResponse submit(@PathVariable UUID id, @Valid @RequestBody AttemptSubmitRequest request) {
         return attemptService.submit(CurrentUser.id(), id, request);

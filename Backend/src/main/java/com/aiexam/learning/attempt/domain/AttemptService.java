@@ -3,6 +3,7 @@ package com.aiexam.learning.attempt.domain;
 import com.aiexam.learning.ai.domain.ExamAiClient;
 import com.aiexam.learning.attempt.api.AnswerSubmitRequest;
 import com.aiexam.learning.attempt.api.AttemptResponse;
+import com.aiexam.learning.attempt.api.AttemptSolutionResponse;
 import com.aiexam.learning.attempt.api.AttemptSubmitRequest;
 import com.aiexam.learning.attempt.infrastructure.AttemptRepository;
 import com.aiexam.learning.common.api.PageResponse;
@@ -12,6 +13,7 @@ import com.aiexam.learning.elo.domain.EloEvent;
 import com.aiexam.learning.elo.domain.EloService;
 import com.aiexam.learning.paper.domain.Paper;
 import com.aiexam.learning.paper.domain.PaperQuestion;
+import com.aiexam.learning.paper.domain.PaperSection;
 import com.aiexam.learning.paper.domain.PaperService;
 import com.aiexam.learning.question.domain.ContentStatus;
 import com.aiexam.learning.question.domain.Question;
@@ -25,6 +27,9 @@ import org.springframework.transaction.annotation.Transactional;
 
 import java.math.BigDecimal;
 import java.math.RoundingMode;
+import java.util.ArrayList;
+import java.util.LinkedHashMap;
+import java.util.List;
 import java.util.Map;
 import java.util.UUID;
 import java.util.function.Function;
@@ -73,14 +78,15 @@ public class AttemptService {
             AttemptAnswer answer = attempt.addAnswer(question, selected, submitted.textAnswer());
             grade(answer, question, selected, submitted.textAnswer(), item.getPoints());
         }
+        applyPartTwoGroupScores(attempt, items);
         attempt.markSubmitted();
         BigDecimal total = attempt.getAnswers().stream()
                 .map(AttemptAnswer::getScore)
                 .reduce(BigDecimal.ZERO, BigDecimal::add);
         BigDecimal max = attempt.getMaxScore() == null || attempt.getMaxScore().signum() == 0
-                ? BigDecimal.ONE
+                ? Ts10Scoring.MAX_SCORE
                 : attempt.getMaxScore();
-        double ratio = total.divide(max, 4, RoundingMode.HALF_UP).doubleValue();
+        double ratio = Ts10Scoring.eloScore(total, max);
         int paperElo = (int) Math.round(attempt.getPaper().getItems().stream()
                 .mapToInt(item -> item.getQuestion().getEloRating())
                 .average()
@@ -94,6 +100,17 @@ public class AttemptService {
         return AttemptResponse.from(getOwned(userId, attemptId));
     }
 
+    public AttemptSolutionResponse solutions(UUID userId, UUID attemptId) {
+        Attempt attempt = getOwned(userId, attemptId);
+        if (attempt.getStatus() != AttemptStatus.GRADED) {
+            throw new BusinessRuleException("ATTEMPT_NOT_GRADED", "Solutions are available after the exam is graded");
+        }
+        return new AttemptSolutionResponse(
+                AttemptResponse.from(attempt),
+                paperService.get(attempt.getPaper().getId(), true)
+        );
+    }
+
     public PageResponse<AttemptResponse> listMine(UUID userId, Pageable pageable) {
         return PageResponse.from(attemptRepository.findByUserId(userId, pageable).map(AttemptResponse::from));
     }
@@ -101,6 +118,39 @@ public class AttemptService {
     public Attempt getAttempt(UUID attemptId) {
         return attemptRepository.findWithAnswersById(attemptId)
                 .orElseThrow(() -> new ResourceNotFoundException("ATTEMPT_NOT_FOUND", "Attempt not found: " + attemptId));
+    }
+
+    private void applyPartTwoGroupScores(Attempt attempt, Map<UUID, PaperQuestion> items) {
+        Map<String, List<AttemptAnswer>> groups = new LinkedHashMap<>();
+        for (AttemptAnswer answer : attempt.getAnswers()) {
+            PaperQuestion item = items.get(answer.getQuestion().getId());
+            if (item == null || item.getSection() != PaperSection.PART_II || item.getGroupKey() == null) {
+                continue;
+            }
+            groups.computeIfAbsent(item.getGroupKey(), key -> new ArrayList<>()).add(answer);
+        }
+        for (List<AttemptAnswer> group : groups.values()) {
+            List<AttemptAnswer> correct = group.stream()
+                    .filter(answer -> Boolean.TRUE.equals(answer.getCorrect()))
+                    .toList();
+            BigDecimal groupScore = Ts10Scoring.partTwoGroupScore(correct.size());
+            for (AttemptAnswer answer : group) {
+                if (!Boolean.TRUE.equals(answer.getCorrect())) {
+                    answer.grade(false, BigDecimal.ZERO.setScale(2), answer.getAiFeedback(), GradedBy.AUTO);
+                }
+            }
+            if (correct.isEmpty()) {
+                continue;
+            }
+            BigDecimal share = groupScore.divide(BigDecimal.valueOf(correct.size()), 2, RoundingMode.HALF_UP);
+            BigDecimal assigned = BigDecimal.ZERO;
+            for (int i = 0; i < correct.size(); i++) {
+                BigDecimal piece = i == correct.size() - 1 ? groupScore.subtract(assigned) : share;
+                AttemptAnswer answer = correct.get(i);
+                answer.grade(true, piece, answer.getAiFeedback(), GradedBy.AUTO);
+                assigned = assigned.add(piece);
+            }
+        }
     }
 
     private void grade(

@@ -8,12 +8,13 @@ import org.springframework.data.domain.Pageable;
 import org.springframework.data.jpa.repository.EntityGraph;
 import org.springframework.data.jpa.repository.JpaRepository;
 
+import java.util.List;
 import java.util.Optional;
 import java.util.UUID;
 
 public interface PaperRepository extends JpaRepository<Paper, UUID> {
 
-    @EntityGraph(attributePaths = {"items", "items.question", "items.question.choices", "subject"})
+    @EntityGraph(attributePaths = {"items", "items.question", "items.question.choices", "subject", "paperSet"})
     Optional<Paper> findWithItemsById(UUID id);
 
     Page<Paper> findBySubjectIdAndStatus(UUID subjectId, ContentStatus status, Pageable pageable);
@@ -21,4 +22,9 @@ public interface PaperRepository extends JpaRepository<Paper, UUID> {
     Page<Paper> findByKindAndStatus(PaperKind kind, ContentStatus status, Pageable pageable);
 
     Page<Paper> findByStatus(ContentStatus status, Pageable pageable);
+
+    @EntityGraph(attributePaths = "items")
+    List<Paper> findByPaperSetIdOrderByExamNumberAsc(UUID paperSetId);
+
+    long countByPaperSetId(UUID paperSetId);
 }

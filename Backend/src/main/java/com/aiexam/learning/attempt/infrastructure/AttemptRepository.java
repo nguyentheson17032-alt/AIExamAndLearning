@@ -18,6 +18,8 @@ public interface AttemptRepository extends JpaRepository<Attempt, UUID> {
             "answers.question.choices",
             "paper",
             "paper.items",
+            "paper.items.question",
+            "paper.items.question.choices",
             "user"
     })
     Optional<Attempt> findWithAnswersById(UUID id);

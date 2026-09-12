@@ -116,10 +116,10 @@
 
 ## Phase 16: Exam Set Backend
 
-- [ ] Add PaperSet list and detail APIs
-- [ ] Grade TS10 papers on a 10-point scale (MCQ auto, đúng/sai group scale, short answer AI)
-- [ ] Apply Elo using score divided by 10
-- [ ] Add graded-attempt solution review API
+- [x] Add PaperSet list and detail APIs
+- [x] Grade TS10 papers on a 10-point scale (MCQ auto, đúng/sai group scale, short answer AI)
+- [x] Apply Elo using score divided by 10
+- [x] Add graded-attempt solution review API
 
 ## Phase 17: TS10 2025-2026 Import
 

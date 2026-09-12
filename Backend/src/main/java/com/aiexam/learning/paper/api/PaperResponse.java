@@ -14,6 +14,8 @@ public record PaperResponse(
         UUID id,
         UUID authorId,
         UUID subjectId,
+        UUID paperSetId,
+        Integer examNumber,
         String title,
         String description,
         PaperKind kind,
@@ -31,6 +33,10 @@ public record PaperResponse(
                         item.getQuestion().getId(),
                         item.getSortOrder(),
                         item.getPoints(),
+                        item.getSection(),
+                        item.getSectionTitle(),
+                        item.getItemLabel(),
+                        item.getGroupKey(),
                         QuestionResponse.from(item.getQuestion(), includeAnswer)
                 ))
                 .toList();
@@ -38,6 +44,8 @@ public record PaperResponse(
                 paper.getId(),
                 paper.getAuthor().getId(),
                 paper.getSubject().getId(),
+                paper.getPaperSet() == null ? null : paper.getPaperSet().getId(),
+                paper.getExamNumber(),
                 paper.getTitle(),
                 paper.getDescription(),
                 paper.getKind(),
