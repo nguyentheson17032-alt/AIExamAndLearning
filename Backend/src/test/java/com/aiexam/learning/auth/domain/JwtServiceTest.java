@@ -41,4 +41,30 @@ class JwtServiceTest {
         assertThatThrownBy(() -> jwtService.validateAccessTokenAndGetSubject(refresh))
                 .isInstanceOf(JwtException.class);
     }
+
+    @Test
+    void generateAccessToken_whenSecretIsBase64Url_signsAndValidates() {
+        JwtService urlSafeService = new JwtService(new JwtProperties(
+                "Gn3LC2IzsWBZngUzAakJRYJb0dadgo6Cat00h_LuV4I=",
+                Duration.ofMinutes(15),
+                Duration.ofDays(7)
+        ));
+        AuthUserDetails details = new AuthUserDetails(
+                User.register("student@exam.local", "hash", "Student", UserRole.STUDENT, 1000));
+        String token = urlSafeService.generateAccessToken(details);
+        assertThat(urlSafeService.validateAccessTokenAndGetSubject(token)).isEqualTo("student@exam.local");
+    }
+
+    @Test
+    void generateAccessToken_whenSecretIsRawUtf8WithUnderscore_signsAndValidates() {
+        JwtService rawService = new JwtService(new JwtProperties(
+                "local_dev_jwt_secret_key_32bytes_min",
+                Duration.ofMinutes(15),
+                Duration.ofDays(7)
+        ));
+        AuthUserDetails details = new AuthUserDetails(
+                User.register("student@exam.local", "hash", "Student", UserRole.STUDENT, 1000));
+        String token = rawService.generateAccessToken(details);
+        assertThat(rawService.validateAccessTokenAndGetSubject(token)).isEqualTo("student@exam.local");
+    }
 }

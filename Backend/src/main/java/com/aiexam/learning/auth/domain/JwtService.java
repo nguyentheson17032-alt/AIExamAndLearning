@@ -5,11 +5,13 @@ import io.jsonwebtoken.Claims;
 import io.jsonwebtoken.JwtException;
 import io.jsonwebtoken.Jwts;
 import io.jsonwebtoken.io.Decoders;
+import io.jsonwebtoken.io.DecodingException;
 import io.jsonwebtoken.security.Keys;
 import org.springframework.security.core.userdetails.UserDetails;
 import org.springframework.stereotype.Service;
 
 import javax.crypto.SecretKey;
+import java.nio.charset.StandardCharsets;
 import java.time.Instant;
 import java.util.Date;
 import java.util.Map;
@@ -19,9 +21,11 @@ import java.util.UUID;
 public class JwtService {
 
     private final JwtProperties properties;
+    private final SecretKey signingKey;
 
     public JwtService(JwtProperties properties) {
         this.properties = properties;
+        this.signingKey = Keys.hmacShaKeyFor(decodeSecret(properties.secret()));
     }
 
     public String generateAccessToken(UserDetails userDetails) {
@@ -68,20 +72,32 @@ public class JwtService {
                 .id(UUID.randomUUID().toString())
                 .issuedAt(Date.from(now))
                 .expiration(Date.from(now.plusMillis(expirationMs)))
-                .signWith(signingKey())
+                .signWith(signingKey)
                 .compact();
     }
 
     private Claims extractClaims(String token) {
         return Jwts.parser()
-                .verifyWith(signingKey())
+                .verifyWith(signingKey)
                 .build()
                 .parseSignedClaims(token)
                 .getPayload();
     }
 
-    private SecretKey signingKey() {
-        byte[] keyBytes = Decoders.BASE64.decode(properties.secret());
-        return Keys.hmacShaKeyFor(keyBytes);
+    static byte[] decodeSecret(String secret) {
+        try {
+            return Decoders.BASE64.decode(secret);
+        } catch (DecodingException ignored) {
+            // URL-safe secrets use '-' and '_'; passphrases are raw UTF-8.
+        }
+        try {
+            byte[] urlDecoded = Decoders.BASE64URL.decode(secret);
+            if (urlDecoded.length >= 32) {
+                return urlDecoded;
+            }
+        } catch (DecodingException ignored) {
+            // Fall through to the raw secret.
+        }
+        return secret.getBytes(StandardCharsets.UTF_8);
     }
 }
