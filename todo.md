@@ -133,3 +133,73 @@
 - [x] Take an exam one part and one question at a time with Next
 - [x] Add answer input and submit for AI/auto grading
 - [x] Show detailed solutions after the exam is finished
+
+## Phase 19: Restore TS10 Equation Content
+
+- [x] Fix extractor so Part I/II/III question numbers do not overwrite each other
+- [x] Extract MathType equation images into question stems
+- [x] Render equation images in the take-exam and solution UI
+- [x] Re-import the exam set so the database matches the restored JSON
+
+## Phase 20: TS10 Full Question Snapshots
+
+- [x] Capture each TS10 question (stem and options) as a PNG from the Word file
+- [x] Reference snapshot images in the import JSON
+- [x] Show the full question image in take-exam and solutions
+- [x] Re-import the exam set so the database uses the snapshots
+
+## Phase 21: Solution Snapshots and Score Elo
+
+- [x] Capture each TS10 lời giải as a PNG from the PDF
+- [x] Reference solution snapshots in the import JSON
+- [x] Show the solution image and a letter-only Bài làm on the solutions page
+- [x] Add exam score to Elo and refresh the header rating
+- [x] Re-import the exam set so explanations use the snapshots
+
+## Phase 22: Score Elo and Unused Images
+
+- [x] Add Elo from the awarded exam score, not a fixed +9
+- [x] Delete unused WMF images under frontend/public/ts10
+- [x] Strip leftover image markers from the TS10 import JSON
+
+## Phase 23: Missing Attempt Redirect
+
+- [x] Send deleted attempt URLs back to the attempts list
+
+## Phase 24: Scoring Rank Elo Map
+
+- [x] Write SCORING.md mapping grading, rank, and Elo source files
+
+## Phase 25: Expired Session Refresh
+
+- [x] Refresh expired access tokens in a route handler that can set cookies
+- [x] Redirect unauthorized API calls instead of throwing a runtime overlay
+
+## Phase 26: Exam-Set Elo Lock
+
+- [x] Hide AI Elo adjustment on exam-set attempts
+- [x] Reject AI Elo adjustment for papers in a set
+- [x] Document that exam-set Elo stays score-based
+- [x] Remove AI Elo adjustment from the attempt result page
+
+## Phase 27: Subject Exam Sets
+
+- [x] List exam sets for a subject on the subject detail page
+- [x] Show the 30 TS10 papers when opening Toán
+
+## Phase 28: Subject-First Exam Sets
+
+- [x] Subjects → Toán shows the exam set card only
+- [x] Opening the set lists all 30 papers
+- [x] Remove the /exam-sets list from navigation
+
+## Phase 29: Subject Page Cleanup
+
+- [x] Hide Topics on the subject detail page
+- [x] Remove the Bộ đề heading on the subject detail page
+
+## Phase 30: Hydration-Safe Dates
+
+- [x] Add formatDateTime with a fixed locale and timezone
+- [x] Use formatDateTime on attempts and rank pages
+- [x] Add formatDateTime tests

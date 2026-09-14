@@ -2,6 +2,7 @@
 
 import { backendFetch, errorMessage } from "@/lib/backend";
 import { requireTeacher, requireUser } from "@/lib/guards";
+import { getSessionUser, persistSessionUser } from "@/lib/session";
 import type { Paper, Question, UserProfile } from "@/lib/types";
 import { revalidatePath } from "next/cache";
 import { redirect } from "next/navigation";
@@ -59,7 +60,18 @@ export async function generateAiPracticeAction(
 export async function adjustEloAction(attemptId: string): Promise<AiFormState> {
   await requireUser();
   try {
-    await backendFetch<UserProfile>(`/api/v1/ai/attempts/${attemptId}/elo`, { method: "POST" });
+    const profile = await backendFetch<UserProfile>(`/api/v1/ai/attempts/${attemptId}/elo`, { method: "POST" });
+    const session = await getSessionUser();
+    if (session) {
+      await persistSessionUser({
+        ...session,
+        displayName: profile.displayName,
+        role: profile.role,
+        eloRating: profile.eloRating,
+        rankCode: profile.rankCode,
+      });
+    }
+    revalidatePath("/", "layout");
     revalidatePath("/me");
     revalidatePath(`/attempts/${attemptId}`);
     return { error: "", message: "Elo adjusted." };

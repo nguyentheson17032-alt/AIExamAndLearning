@@ -2,7 +2,8 @@
 
 import { backendFetch, errorMessage } from "@/lib/backend";
 import { requireUser } from "@/lib/guards";
-import type { Attempt } from "@/lib/types";
+import { getSessionUser, persistSessionUser } from "@/lib/session";
+import type { Attempt, UserProfile } from "@/lib/types";
 import { revalidatePath } from "next/cache";
 import { redirect } from "next/navigation";
 
@@ -29,9 +30,21 @@ export async function submitAttemptAction(
       method: "POST",
       body: JSON.stringify({ answers }),
     });
+    const session = await getSessionUser();
+    if (session) {
+      const profile = await backendFetch<UserProfile>("/api/v1/me");
+      await persistSessionUser({
+        ...session,
+        displayName: profile.displayName,
+        role: profile.role,
+        eloRating: profile.eloRating,
+        rankCode: profile.rankCode,
+      });
+    }
   } catch (error) {
     return { error: errorMessage(error, "Submit failed") };
   }
+  revalidatePath("/", "layout");
   revalidatePath("/attempts");
   revalidatePath("/me");
   redirect(`/attempts/${attemptId}`);

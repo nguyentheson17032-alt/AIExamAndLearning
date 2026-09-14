@@ -1,9 +1,35 @@
+import { headers } from "next/headers";
 import { redirect } from "next/navigation";
 import { problemMessage, readProblem } from "./problem";
-import { getAccessToken, getRefreshToken, persistAuth } from "./session";
+import { safeInternalPath } from "./safe-path";
+import { getAccessToken, getRefreshToken } from "./session";
 import type { AuthResponse } from "./types";
 
-const BACKEND_URL = process.env.BACKEND_URL ?? "http://localhost:8080";
+export const BACKEND_URL = process.env.BACKEND_URL ?? "http://localhost:8080";
+
+function isNextRedirect(error: unknown): boolean {
+  return (
+    typeof error === "object" &&
+    error !== null &&
+    "digest" in error &&
+    typeof (error as { digest: unknown }).digest === "string" &&
+    (error as { digest: string }).digest.startsWith("NEXT_REDIRECT")
+  );
+}
+
+export function rethrowIfRedirect(error: unknown): void {
+  if (isNextRedirect(error)) {
+    throw error;
+  }
+}
+
+async function redirectForUnauthorized(): Promise<never> {
+  if (!(await getRefreshToken())) {
+    redirect("/api/session/clear");
+  }
+  const pathname = (await headers()).get("x-pathname") ?? "/";
+  redirect(`/api/session/refresh?next=${encodeURIComponent(safeInternalPath(pathname))}`);
+}
 
 export class ApiError extends Error {
   constructor(
@@ -26,55 +52,24 @@ export function errorMessage(error: unknown, fallback = "Request failed"): strin
   return fallback;
 }
 
-async function refreshAccessToken(): Promise<string | null> {
-  const refreshToken = await getRefreshToken();
-  if (!refreshToken) {
-    return null;
-  }
-  const response = await fetch(`${BACKEND_URL}/api/v1/auth/refresh`, {
-    method: "POST",
-    headers: { "Content-Type": "application/json" },
-    body: JSON.stringify({ refreshToken }),
-    cache: "no-store",
-  });
-  if (!response.ok) {
-    return null;
-  }
-  const auth = (await response.json()) as AuthResponse;
-  try {
-    await persistAuth(auth);
-  } catch {
-    // Server Components cannot write cookies; the new token is still used for this request.
-  }
-  return auth.accessToken;
-}
-
-export async function backendFetch<T>(
-  path: string,
-  init: RequestInit = {},
-  retry = true,
-): Promise<T> {
-  const headers = new Headers(init.headers);
-  if (init.body && !headers.has("Content-Type")) {
-    headers.set("Content-Type", "application/json");
+export async function backendFetch<T>(path: string, init: RequestInit = {}): Promise<T> {
+  const requestHeaders = new Headers(init.headers);
+  if (init.body && !requestHeaders.has("Content-Type")) {
+    requestHeaders.set("Content-Type", "application/json");
   }
   const token = await getAccessToken();
   if (token) {
-    headers.set("Authorization", `Bearer ${token}`);
+    requestHeaders.set("Authorization", `Bearer ${token}`);
   }
 
   const response = await fetch(`${BACKEND_URL}${path}`, {
     ...init,
-    headers,
+    headers: requestHeaders,
     cache: "no-store",
   });
 
-  if (response.status === 401 && retry) {
-    const nextToken = await refreshAccessToken();
-    if (nextToken) {
-      return backendFetch<T>(path, init, false);
-    }
-    redirect("/api/session/clear");
+  if (response.status === 401) {
+    await redirectForUnauthorized();
   }
 
   if (response.status === 204) {

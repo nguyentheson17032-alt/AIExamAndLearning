@@ -31,6 +31,15 @@ public class EloService {
     }
 
     @Transactional
+    public EloEvent applyScoreDelta(User user, Attempt attempt, int delta) {
+        int before = user.getEloRating();
+        int after = Math.max(100, before + Math.max(0, delta));
+        user.applyElo(after);
+        EloEvent event = EloEvent.record(user, attempt, null, before, after, EloReason.ATTEMPT_GRADED);
+        return eloEventRepository.save(event);
+    }
+
+    @Transactional
     public EloEvent applyAdjustment(User user, Attempt attempt, int suggestedRating, EloReason reason) {
         int before = user.getEloRating();
         user.applyElo(suggestedRating);

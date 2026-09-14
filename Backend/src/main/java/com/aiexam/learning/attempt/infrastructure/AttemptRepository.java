@@ -7,6 +7,8 @@ import org.springframework.data.domain.Pageable;
 import org.springframework.data.jpa.repository.EntityGraph;
 import org.springframework.data.jpa.repository.JpaRepository;
 
+import java.util.Collection;
+import java.util.List;
 import java.util.Optional;
 import java.util.UUID;
 
@@ -16,12 +18,17 @@ public interface AttemptRepository extends JpaRepository<Attempt, UUID> {
             "answers",
             "answers.question",
             "paper",
+            "paper.paperSet",
             "user"
     })
     Optional<Attempt> findWithAnswersById(UUID id);
 
     Page<Attempt> findByUserId(UUID userId, Pageable pageable);
 
-    @EntityGraph(attributePaths = {"answers", "paper", "user"})
+    @EntityGraph(attributePaths = {"answers", "paper", "paper.paperSet", "user"})
     Optional<Attempt> findByUserIdAndPaperIdAndStatus(UUID userId, UUID paperId, AttemptStatus status);
+
+    List<Attempt> findByPaper_IdIn(Collection<UUID> paperIds);
+
+    void deleteByPaper_IdIn(Collection<UUID> paperIds);
 }

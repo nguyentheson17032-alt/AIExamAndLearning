@@ -549,3 +549,376 @@ Log of user–AI collaboration per `todo.md` phase: work done, user prompts, ski
 - All Phase 18 tasks marked `[x]`
 - `npm test` and `npm run build` passed
 - Planned commit: `feat(frontend): sequential exam-set taking and solutions`
+
+## Phase 19: Restore TS10 Equation Content
+
+**Status:** completed
+
+### Work
+
+- Diagnosed missing question text: extractor only joined Word `w:t`, while formulas live in MathType OLE (`Equation.DSMT4` / WMF); Part I/II/III all restart at Câu 1 so later parts overwrote earlier stems
+- Rewrote `_extract_ts10.py` to slice parts before collecting questions, convert WMF/PNG media to `frontend/public/ts10/`, and insert `[[img:/ts10/...]]` markers
+- Re-imported the exam set when first stem lacked `[[img:`
+- Rendered equation images in take-exam, solutions, paper, and question views; stripped inline A–D from MCQ stems so choices do not overlap the prompt
+
+### User prompts
+
+1. > sao tất cả các câu đều mất đi rất nhiều đoạn vậy
+
+### Skills used
+
+- `identity` — filled this phase after restoring exam content
+- `project-todo` — Phase 19 tasks tracked in todo.md
+
+### Rules used
+
+- `karpathy-guidelines.mdc` — extract images instead of inventing formula text
+- `identity.mdc` — log the driving prompt and outcome
+- User git rule — do not commit unless asked
+
+### Outcome
+
+- All Phase 19 tasks marked `[x]`
+- Đề số 1 I.1 is the bậc nhất question with equation images in A–D, not the overwritten Part III stem
+- Browser check: I.1 and I.2 show restored formulas; WMF snapshots remain low-resolution because that is how Word stored them
+
+## Phase 20: TS10 Full Question Snapshots
+
+**Status:** completed
+
+### Work
+
+- Exported the Word file to PDF and cropped 660 questions (30 đề × 22 câu) into `frontend/public/ts10/q/`
+- Each snapshot includes the full stem and options, matching the original paper layout
+- Import JSON stems now start with `[[img:/ts10/q/eXX-...png]]`; take-exam shows that image and MCQ radios as A–D only
+- Re-imported the TS10 set so the database uses the snapshots
+
+### User prompts
+
+1. > bạn có thể chụp ảnh cả câu hỏi được mà, ví dụ chụp như trên
+
+### Skills used
+
+- `identity` — logged this phase
+- `project-todo` — Phase 20 tasks in todo.md
+
+### Rules used
+
+- `karpathy-guidelines.mdc` — crop original pages instead of reconstructing formulas
+- `identity.mdc` — log the driving prompt and outcome
+- User git rule — do not commit unless asked
+
+### Outcome
+
+- All Phase 20 tasks marked `[x]`
+- Backend tests and frontend unit tests passed
+- Browser: Đề số 1 Câu 1 and Câu 2 show the full question image with A–D in the picture
+
+## Phase 21: Solution Snapshots and Score Elo
+
+**Status:** completed
+
+### Work
+
+- Cropped 660 lời giải blocks from the PDF (`e01-sol-01.png` …) and pointed each question `explanation` at that snapshot
+- Solutions page shows the lời giải image; Bài làm is the chosen letter (or Đúng/Sai text), not the broken WMF choice image
+- Exam-set papers add rounded score to Elo (9 điểm → +9); the header reads live `/api/v1/me` so `Teacher · GOLD 1209` updates after grading
+- Re-imported the TS10 set; backend tests and frontend unit tests passed
+
+### User prompts
+
+1. > xem lời giải chi tiết, phần lời giải b cũng chụp ảnh lời giải luôn và chỗ Bài làm:..., chỗ elo nữa(teacher đang có 1200 elo khi làm bài được 9 điểm thì sẽ cộng 9 elo thành 1209 và cập nhật luôn ở Teacher · GOLD 1200)
+
+### Skills used
+
+- `identity` — logged this phase
+- `project-todo` — Phase 21 tasks in todo.md
+
+### Rules used
+
+- `karpathy-guidelines.mdc` — crop original lời giải instead of reconstructing formulas
+- `identity.mdc` — log the driving prompt and outcome
+- User git rule — do not commit unless asked
+- User browser rule — verified solutions page and header Elo on localhost:3000
+
+### Outcome
+
+- All Phase 21 tasks marked `[x]`
+- Browser: Đề số 1 solutions show `Bài làm: B`, a readable lời giải snapshot, `9 / 10 · Elo 1200 → 1209`, and header `Teacher · GOLD 1209`
+- Planned commit: `feat(ts10): solution snapshots and score-based elo`
+
+## Phase 22: Score Elo and Unused Images
+
+**Status:** completed
+
+### Work
+
+- Elo for exam-set papers now uses the awarded score as a whole number (10 → +10, 9 → +9, 8.50 → +8, 7.25 → +7), not a fixed +9
+- Result copy shows `+N Elo theo X điểm`
+- Deleted 4911 unused WMF PNGs in `frontend/public/ts10`; kept 1320 question/solution snapshots in `ts10/q`
+- Stripped `[[img:/ts10/imageN.png]]` from the import JSON and re-imported the set
+
+### User prompts
+
+1. > số elo được cộng theo số điểm đạt được chứ không phải auto cộng 9 và xóa các ảnh ko dùng đến trong @frontend/public/ts10 đi
+
+### Skills used
+
+- `identity` — logged this phase
+- `project-todo` — Phase 22 tasks in todo.md
+
+### Rules used
+
+- `karpathy-guidelines.mdc` — delete unused assets instead of leaving dead WMF files
+- `identity.mdc` — log the driving prompt and outcome
+- User git rule — do not commit unless asked
+
+### Outcome
+
+- All Phase 22 tasks marked `[x]`
+- `Ts10ScoringTest` and `Ts10ExamBankTest` passed
+- Planned commit: `fix(ts10): score-based elo and drop unused images`
+
+## Phase 23: Missing Attempt Redirect
+
+**Status:** completed
+
+### Work
+
+- Attempt detail and solutions pages catch 404 and redirect to `/attempts` instead of throwing a runtime ApiError
+- Confirmed the deleted demo attempt URL no longer shows the Next.js overlay
+
+### User prompts
+
+1. > Attempt not found: f0216bc5-7b8c-4f26-b9c5-85217620e432
+
+### Skills used
+
+- `identity` — logged this phase
+- `project-todo` — Phase 23 tasks in todo.md
+
+### Rules used
+
+- `karpathy-guidelines.mdc` — small redirect helper, no extra error UI
+- User browser rule — verified the stale URL lands on Attempts
+- User git rule — do not commit unless asked
+
+### Outcome
+
+- All Phase 23 tasks marked `[x]`
+- Planned commit: `fix(attempts): redirect missing attempt pages`
+
+## Phase 24: Scoring Rank Elo Map
+
+**Status:** completed
+
+### Work
+
+- Wrote root `SCORING.md`: map of TS10 grading (Part I/II/III), user rank from Elo, two Elo paths (exam-set score delta vs classic K=24), question classification, APIs/UI, and which file to edit
+
+### User prompts
+
+1. > những tiêu chí chấm điểm, xếp hạng, elo, đang nằm ở đâu, làm file md để chỉ rõ
+
+### Skills used
+
+- `identity` — logged this phase
+- `project-todo` — Phase 24 in todo.md
+
+### Rules used
+
+- `identity.mdc` — log the driving prompt and outcome
+- `karpathy-guidelines.mdc` — one map file, no extra docs
+- User git rule — do not commit unless asked
+
+### Outcome
+
+- All Phase 24 tasks marked `[x]`
+- Planned commit: `docs: map scoring rank and elo sources`
+
+## Phase 25: Expired Session Refresh
+
+**Status:** completed
+
+### Work
+
+- Stopped `backendFetch` from throwing a runtime overlay on 401
+- Refresh now happens in `/api/session/refresh`, which can write cookies (RSC cannot)
+- Layout rethrows Next.js redirect errors instead of swallowing them
+- Stale sessions without a refresh cookie go to login via `/api/session/clear`
+
+### User prompts
+
+1. Runtime `ApiError` overlay: Unauthorized from `lib/backend.ts` `backendFetch`
+
+### Skills used
+
+- `identity` — logged this phase
+- `project-todo` — Phase 25 tasks in todo.md
+
+### Rules used
+
+- `karpathy-guidelines.mdc` — refresh in a route handler, no extra auth library
+- User browser rule — verified login and exam-set list without the overlay
+- User git rule — do not commit unless asked
+
+### Outcome
+
+- All Phase 25 tasks marked `[x]`
+- `npm test` passed
+- Planned commit: `fix(auth): refresh expired session without overlay`
+
+## Phase 26: Exam-Set Elo Lock
+
+**Status:** completed
+
+### Work
+
+- Explained that AI Elo adjustment was a second write: heuristic/AI `suggestedElo` then `applyAdjustment` overwrites the user rating
+- This attempt is practice paper “AI luyện thi”, already +13 Elo on submit (K=24)
+- Removed the AI Elo button from the result page so it cannot double-apply
+- Exam-set papers reject `POST /ai/attempts/{id}/elo` with `ELO_LOCKED_TO_SCORE`
+
+### User prompts
+
+1. > sao sau khi tôi bấm vào AI Elo adjustment trong http://localhost:3000/attempts/bfc437fc-5b5e-448a-953e-96b42d9f147e nó lại cập nhật elo
+
+### Skills used
+
+- `identity` — logged this phase
+- `project-todo` — Phase 26 in todo.md
+
+### Rules used
+
+- `karpathy-guidelines.mdc` — remove the double-apply button, no extra Elo UI
+- User browser rule — verified the attempt page no longer has AI Elo adjustment
+- User git rule — do not commit unless asked
+
+### Outcome
+
+- All Phase 26 tasks marked `[x]`
+- `AiExamServiceTest` passed
+- Planned commit: `fix(elo): stop second AI rating on graded attempts`
+
+## Phase 27: Subject Exam Sets
+
+**Status:** completed
+
+### Work
+
+- Subject detail listed only topics; Toán did not show the imported TS10 bank
+- `GET /api/v1/paper-sets?subjectId=` now returns published sets with papers
+- Opening Toán shows “Bộ 30 đề Toán tuyển sinh 10” and đề 1–30 with Làm đề
+
+### User prompts
+
+1. > http://localhost:3000/subjects ở trang này sau khi bấm vào môn toán thì nó hiển thị bộ 30 đề toán tôi đưa b
+
+### Skills used
+
+- `identity` — logged this phase
+- `project-todo` — Phase 27 in todo.md
+
+### Rules used
+
+- `karpathy-guidelines.mdc` — reuse exam-set list on the subject page
+- User browser rule — verified Toán shows 30 exams
+- User git rule — do not commit unless asked
+
+### Outcome
+
+- All Phase 27 tasks marked `[x]`
+- `PaperSetControllerTest` passed
+- Planned commit: `feat(subjects): show exam set papers on subject page`
+
+## Phase 28: Subject-First Exam Sets
+
+**Status:** completed
+
+### Work
+
+- Subjects is in the nav for every signed-in user; Toán lists the set card only (year, count, title), not the 30 papers
+- Clicking “Bộ 30 đề Toán tuyển sinh 10” opens `/subjects/{id}/sets/{setId}` with đề 1–30 and Làm đề
+- Nav item “Bộ đề” and the `/exam-sets` list UI are gone; `/exam-sets` redirects to `/subjects`, old set URLs redirect into the subject path
+- Home “Bộ đề tuyển sinh 10” goes to `/subjects`
+
+### User prompts
+
+1. > tôi muốn vào Subjects → Toán sẽ thấy Bộ 30 đề Toán tuyển sinh 10 → bấm vào "Bộ 30 đề Toán tuyển sinh 10" thấy đủ 30 đề và bỏ trang http://localhost:3000/exam-sets này đi
+
+### Skills used
+
+- `identity` — logged this phase
+- `project-todo` — Phase 28 in todo.md
+
+### Rules used
+
+- `karpathy-guidelines.mdc` — nest papers under the set, do not keep a second catalog page
+- User browser rule — verified Toán card → 30 papers; `/exam-sets` lands on Subjects
+- User git rule — do not commit unless asked
+
+### Outcome
+
+- All Phase 28 tasks marked `[x]`
+- Frontend session tests passed (6)
+- Planned commit: `feat(subjects): open exam sets from the subject page`
+
+## Phase 29: Subject Page Cleanup
+
+**Status:** completed
+
+### Work
+
+- Removed the teacher Topics list, Add topic form, and topics API fetch from the subject detail page
+- Removed the section heading “Bộ đề”; the exam-set card (title + description) remains
+
+### User prompts
+
+1. > http://localhost:3000/subjects/ec1a2dbc-1d38-4f81-a960-b890a7280db2 trong trang này b hãy bỏ phần Topics đi và bỏ chữ bộ đề đi và giải thích cách làm
+
+### Skills used
+
+- `identity` — logged this phase
+- `project-todo` — Phase 29 in todo.md
+
+### Rules used
+
+- `karpathy-guidelines.mdc` — only the subject detail page, no extra cleanup
+- User browser rule — verified Toán has no Topics / Bộ đề heading; set link still opens 30 đề
+- User git rule — do not commit unless asked
+
+### Outcome
+
+- All Phase 29 tasks marked `[x]`
+- Planned commit: `fix(subjects): drop topics and bộ đề heading`
+
+## Phase 30: Hydration-Safe Dates
+
+**Status:** completed
+
+### Work
+
+- Added `formatDateTime` with `en-GB` + `Asia/Ho_Chi_Minh` so SSR and the browser emit the same date string
+- Replaced `toLocaleString()` on Attempts and Rank (`/me`)
+- Added unit tests and wired them into `npm test`
+
+### User prompts
+
+1. > A tree hydrated but some attributes of the server rendered HTML didn't match the client properties... lỗi gì đây
+2. > b hãy sửa luôn
+
+### Skills used
+
+- `identity` — logged this phase
+- `project-todo` — Phase 30 in todo.md
+
+### Rules used
+
+- `karpathy-guidelines.mdc` — one formatter, only the two `toLocaleString` call sites
+- `agent-auto-git.mdc` / user git rule — do not commit unless asked
+
+### Outcome
+
+- All Phase 30 tasks marked `[x]`
+- `npm test` passed (8)
+- Planned commit: `fix(frontend): format dates without hydration mismatch`

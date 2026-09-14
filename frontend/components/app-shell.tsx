@@ -15,16 +15,13 @@ export function AppShell({
   const links: NavItem[] = user
     ? [
         { href: "/", label: "Home" },
-        { href: "/exam-sets", label: "Bộ đề" },
+        { href: "/subjects", label: "Subjects" },
         { href: "/papers", label: "Papers" },
         { href: "/practice", label: "Practice" },
         { href: "/attempts", label: "Attempts" },
         { href: "/me", label: "Rank" },
         ...(teacher
-          ? [
-              { href: "/subjects", label: "Subjects" },
-              { href: "/questions", label: "Questions" },
-            ]
+          ? [{ href: "/questions", label: "Questions" }]
           : []),
       ]
     : [

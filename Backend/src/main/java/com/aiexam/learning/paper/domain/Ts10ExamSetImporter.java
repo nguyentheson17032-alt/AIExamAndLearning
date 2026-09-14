@@ -1,7 +1,9 @@
 package com.aiexam.learning.paper.domain;
 
+import com.aiexam.learning.attempt.infrastructure.AttemptRepository;
 import com.aiexam.learning.catalog.domain.Subject;
 import com.aiexam.learning.catalog.infrastructure.SubjectRepository;
+import com.aiexam.learning.elo.infrastructure.EloEventRepository;
 import com.aiexam.learning.paper.infrastructure.PaperRepository;
 import com.aiexam.learning.paper.infrastructure.PaperSetRepository;
 import com.aiexam.learning.question.domain.BloomLevel;
@@ -23,6 +25,7 @@ import org.springframework.transaction.annotation.Transactional;
 
 import java.io.InputStream;
 import java.util.List;
+import java.util.UUID;
 
 @Service
 @RequiredArgsConstructor
@@ -38,12 +41,55 @@ public class Ts10ExamSetImporter {
     private final SubjectRepository subjectRepository;
     private final UserRepository userRepository;
     private final PasswordEncoder passwordEncoder;
+    private final AttemptRepository attemptRepository;
+    private final EloEventRepository eloEventRepository;
 
     @Transactional
     public PaperSet importIfAbsent() {
         Ts10ExamBank.Bank bank = readBank();
         return paperSetRepository.findByAcademicYearAndTitle(bank.academicYear(), bank.title())
+                .map(existing -> stale(existing) ? replace(existing, bank) : existing)
                 .orElseGet(() -> importBank(bank));
+    }
+
+    private boolean stale(PaperSet set) {
+        List<Paper> papers = paperRepository.findByPaperSetIdOrderByExamNumberAsc(set.getId());
+        if (papers.isEmpty() || papers.getFirst().getItems().isEmpty()) {
+            return true;
+        }
+        String stem = papers.getFirst().getItems().getFirst().getQuestion().getStem();
+        String explanation = papers.getFirst().getItems().getFirst().getQuestion().getExplanation();
+        return stem == null || !stem.contains("[[img:/ts10/q/")
+                || stem.contains("/ts10/image")
+                || explanation == null || !explanation.contains("-sol-");
+    }
+
+    private PaperSet replace(PaperSet existing, Ts10ExamBank.Bank bank) {
+        List<Paper> papers = paperRepository.findByPaperSetIdOrderByExamNumberAsc(existing.getId());
+        List<UUID> paperIds = papers.stream().map(Paper::getId).toList();
+        List<UUID> questionIds = papers.stream()
+                .flatMap(paper -> paper.getItems().stream())
+                .map(item -> item.getQuestion().getId())
+                .distinct()
+                .toList();
+        if (!paperIds.isEmpty()) {
+            List<UUID> attemptIds = attemptRepository.findByPaper_IdIn(paperIds).stream()
+                    .map(attempt -> attempt.getId())
+                    .toList();
+            if (!attemptIds.isEmpty()) {
+                eloEventRepository.deleteByAttempt_IdIn(attemptIds);
+            }
+            attemptRepository.deleteByPaper_IdIn(paperIds);
+            paperRepository.deleteAll(papers);
+        }
+        if (!questionIds.isEmpty()) {
+            eloEventRepository.deleteByQuestion_IdIn(questionIds);
+            questionRepository.deleteAllById(questionIds);
+        }
+        paperSetRepository.delete(existing);
+        paperSetRepository.flush();
+        log.info("Replaced stale TS10 exam set {}", existing.getTitle());
+        return importBank(bank);
     }
 
     private PaperSet importBank(Ts10ExamBank.Bank bank) {

@@ -16,6 +16,9 @@ public interface PaperSetRepository extends JpaRepository<PaperSet, UUID> {
 
     List<PaperSet> findByStatusOrderByAcademicYearDescTitleAsc(ContentStatus status);
 
+    @EntityGraph(attributePaths = {"subject", "author"})
+    List<PaperSet> findBySubject_IdAndStatusOrderByAcademicYearDescTitleAsc(UUID subjectId, ContentStatus status);
+
     Optional<PaperSet> findByAcademicYearAndTitle(String academicYear, String title);
 
     boolean existsByAcademicYearAndTitle(String academicYear, String title);

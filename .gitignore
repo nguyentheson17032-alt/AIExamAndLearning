@@ -17,6 +17,9 @@ Thumbs.db
 *.pem
 *.p12
 *.jks
+_ts10_probe.pdf
+_ts10_probe_q1.png
+_probe_word_capture.py
 Backend/target/
 Frontend/node_modules/
 Frontend/.next/

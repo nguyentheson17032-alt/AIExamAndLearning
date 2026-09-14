@@ -22,10 +22,21 @@ public class PaperSetService {
     private final PaperRepository paperRepository;
 
     public List<PaperSetResponse> listPublished() {
-        return paperSetRepository.findByStatusOrderByAcademicYearDescTitleAsc(ContentStatus.PUBLISHED).stream()
-                .map(set -> PaperSetResponse.summary(
-                        set, (int) paperRepository.countByPaperSetId(set.getId())))
-                .toList();
+        return listPublished(null);
+    }
+
+    public List<PaperSetResponse> listPublished(UUID subjectId) {
+        List<PaperSet> sets = subjectId == null
+                ? paperSetRepository.findByStatusOrderByAcademicYearDescTitleAsc(ContentStatus.PUBLISHED)
+                : paperSetRepository.findBySubject_IdAndStatusOrderByAcademicYearDescTitleAsc(
+                        subjectId, ContentStatus.PUBLISHED);
+        if (subjectId == null) {
+            return sets.stream()
+                    .map(set -> PaperSetResponse.summary(
+                            set, (int) paperRepository.countByPaperSetId(set.getId())))
+                    .toList();
+        }
+        return sets.stream().map(this::toDetail).toList();
     }
 
     public PaperSetResponse get(UUID id) {
@@ -34,7 +45,11 @@ public class PaperSetService {
         if (set.getStatus() != ContentStatus.PUBLISHED) {
             throw new ResourceNotFoundException("PAPER_SET_NOT_FOUND", "Paper set not found: " + id);
         }
-        List<PaperSetItemResponse> papers = paperRepository.findByPaperSetIdOrderByExamNumberAsc(id).stream()
+        return toDetail(set);
+    }
+
+    private PaperSetResponse toDetail(PaperSet set) {
+        List<PaperSetItemResponse> papers = paperRepository.findByPaperSetIdOrderByExamNumberAsc(set.getId()).stream()
                 .filter(paper -> paper.getStatus() == ContentStatus.PUBLISHED)
                 .map(paper -> new PaperSetItemResponse(
                         paper.getId(),

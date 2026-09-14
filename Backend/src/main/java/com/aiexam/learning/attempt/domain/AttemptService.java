@@ -84,12 +84,17 @@ public class AttemptService {
         BigDecimal max = attempt.getMaxScore() == null || attempt.getMaxScore().signum() == 0
                 ? Ts10Scoring.MAX_SCORE
                 : attempt.getMaxScore();
-        double ratio = Ts10Scoring.eloScore(total, max);
-        int paperElo = (int) Math.round(attempt.getPaper().getItems().stream()
-                .mapToInt(item -> item.getQuestion().getEloRating())
-                .average()
-                .orElse(attempt.getUser().getEloRating()));
-        EloEvent event = eloService.applyAttemptResult(attempt.getUser(), attempt, paperElo, ratio);
+        EloEvent event;
+        if (attempt.getPaper().getPaperSet() != null) {
+            event = eloService.applyScoreDelta(attempt.getUser(), attempt, Ts10Scoring.eloDelta(total));
+        } else {
+            double ratio = Ts10Scoring.eloScore(total, max);
+            int paperElo = (int) Math.round(attempt.getPaper().getItems().stream()
+                    .mapToInt(item -> item.getQuestion().getEloRating())
+                    .average()
+                    .orElse(attempt.getUser().getEloRating()));
+            event = eloService.applyAttemptResult(attempt.getUser(), attempt, paperElo, ratio);
+        }
         attempt.markGraded(total, event.getRatingBefore(), event.getRatingAfter());
         return AttemptResponse.from(attempt);
     }

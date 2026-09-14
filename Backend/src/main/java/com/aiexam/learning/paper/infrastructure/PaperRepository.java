@@ -32,7 +32,7 @@ public interface PaperRepository extends JpaRepository<Paper, UUID> {
 
     Page<Paper> findByStatus(ContentStatus status, Pageable pageable);
 
-    @EntityGraph(attributePaths = "items")
+    @EntityGraph(attributePaths = {"items", "items.question"})
     List<Paper> findByPaperSetIdOrderByExamNumberAsc(UUID paperSetId);
 
     long countByPaperSetId(UUID paperSetId);

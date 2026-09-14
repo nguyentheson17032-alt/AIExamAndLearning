@@ -170,6 +170,11 @@ public class AiExamService {
             throw new com.aiexam.learning.common.exception.BusinessRuleException(
                     "ATTEMPT_FORBIDDEN", "Attempt does not belong to the current user");
         }
+        if (attempt.getPaper().getPaperSet() != null) {
+            throw new com.aiexam.learning.common.exception.BusinessRuleException(
+                    "ELO_LOCKED_TO_SCORE",
+                    "Exam-set Elo is awarded from the exam score and cannot be adjusted by AI");
+        }
         AiGenerationJob job = jobRepository.save(AiGenerationJob.start(user, AiJobType.ELO, attemptId.toString()));
         try {
             int paperElo = attempt.getPaper().getItems().stream()

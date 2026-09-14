@@ -25,7 +25,7 @@ Dev seed (`--spring.profiles.active=dev`):
 - `teacher@exam.local` / `Teacher123!`
 - `student@exam.local` / `Student123!`
 
-Enable live LLM calls with `APP_AI_ENABLED=true` and a real `OPENAI_API_KEY`. When disabled, classify/grade/generate still work via a deterministic heuristic client.
+Enable live LLM calls with `APP_AI_ENABLED=true` and a real `OPENAI_API_KEY`. When disabled (default), classify/grade/generate still work via a deterministic heuristic client. Unused OpenAI models (audio, image, embedding) stay off so the API can start without a real key.
 
 ## Main APIs
 

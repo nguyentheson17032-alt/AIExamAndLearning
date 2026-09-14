@@ -3,6 +3,7 @@
 import { submitAttemptAction, type AttemptFormState } from "@/lib/attempt-actions";
 import { examSteps } from "@/lib/exam-steps";
 import { ProblemAlert } from "@/components/problem-alert";
+import { StemText, promptStem, questionSnapshotSrc } from "@/components/stem-text";
 import { SubmitButton } from "@/components/submit-button";
 import type { Paper, PaperItem } from "@/lib/types";
 import { useActionState, useState } from "react";
@@ -27,9 +28,10 @@ export function TakeExamForm({ attemptId, paper }: { attemptId: string; paper: P
           <p className="text-xs text-muted">
             {entry.sectionTitle} · Câu {index + 1}/{steps.length}
           </p>
-          {entry.items.map((item) => (
-            <QuestionPrompt key={item.questionId} item={item} />
+          {entry.items.map((item, itemIndex) => (
+            <QuestionPrompt key={item.questionId} item={item} showStem={itemIndex === 0} />
           ))}
+
         </section>
       ))}
       <div className="flex flex-wrap gap-3">
@@ -62,14 +64,20 @@ export function TakeExamForm({ attemptId, paper }: { attemptId: string; paper: P
   );
 }
 
-function QuestionPrompt({ item }: { item: PaperItem }) {
+function QuestionPrompt({ item, showStem }: { item: PaperItem; showStem: boolean }) {
   const question = item.question;
   const written = question.type === "SHORT_ANSWER" || question.type === "ESSAY";
+  const snapshot = questionSnapshotSrc(question.stem);
+  const letterOnly = Boolean(snapshot && question.type === "MULTIPLE_CHOICE");
   return (
     <div className="mt-4">
       <input type="hidden" name="questionId" value={question.id} />
       <p className="text-xs text-muted">{item.itemLabel ?? question.type}</p>
-      <p className="mt-2 whitespace-pre-wrap">{question.stem}</p>
+      {showStem ? (
+        <p className="mt-2">
+          <StemText text={promptStem(question.stem, question.choices.length > 0)} />
+        </p>
+      ) : null}
       {written ? (
         <textarea
           name={`text-${question.id}`}
@@ -83,7 +91,13 @@ function QuestionPrompt({ item }: { item: PaperItem }) {
             <label key={choice.id} className="flex items-start gap-2 text-sm">
               <input type="radio" name={`choice-${question.id}`} value={choice.id} className="mt-1" />
               <span>
-                <span className="font-medium">{choice.label}.</span> {choice.content}
+                <span className="font-medium">{choice.label}.</span>
+                {letterOnly ? null : (
+                  <>
+                    {" "}
+                    <StemText text={choice.content} />
+                  </>
+                )}
               </span>
             </label>
           ))}

@@ -1,14 +1,17 @@
 import { cookies } from "next/headers";
 import type { AuthResponse, SessionUser } from "./types";
 import { isStaffRole } from "./roles";
+import { safeInternalPath } from "./safe-path";
+
+export { safeInternalPath };
 
 export const ACCESS_COOKIE = "ew_access_v1";
 export const REFRESH_COOKIE = "ew_refresh_v1";
 export const USER_COOKIE = "ew_user_v1";
 
-const REFRESH_MAX_AGE = 60 * 60 * 24 * 7;
+export const REFRESH_MAX_AGE = 60 * 60 * 24 * 7;
 
-function cookieBase() {
+export function sessionCookieBase() {
   return {
     httpOnly: true,
     sameSite: "lax" as const,
@@ -17,9 +20,20 @@ function cookieBase() {
   };
 }
 
+export function sessionUserFromAuth(auth: AuthResponse): SessionUser {
+  return {
+    userId: auth.userId,
+    email: auth.email,
+    displayName: auth.displayName,
+    role: auth.role,
+    eloRating: auth.eloRating,
+    rankCode: auth.rankCode,
+  };
+}
+
 export async function persistAuth(auth: AuthResponse): Promise<void> {
   const store = await cookies();
-  const base = cookieBase();
+  const base = sessionCookieBase();
   store.set(ACCESS_COOKIE, auth.accessToken, {
     ...base,
     maxAge: auth.expiresInSeconds,
@@ -28,23 +42,20 @@ export async function persistAuth(auth: AuthResponse): Promise<void> {
     ...base,
     maxAge: REFRESH_MAX_AGE,
   });
-  const user: SessionUser = {
-    userId: auth.userId,
-    email: auth.email,
-    displayName: auth.displayName,
-    role: auth.role,
-    eloRating: auth.eloRating,
-    rankCode: auth.rankCode,
-  };
+  await persistSessionUser(sessionUserFromAuth(auth));
+}
+
+export async function persistSessionUser(user: SessionUser): Promise<void> {
+  const store = await cookies();
   store.set(USER_COOKIE, JSON.stringify(user), {
-    ...base,
+    ...sessionCookieBase(),
     maxAge: REFRESH_MAX_AGE,
   });
 }
 
 export async function clearSession(): Promise<void> {
   const store = await cookies();
-  const base = cookieBase();
+  const base = sessionCookieBase();
   store.set(ACCESS_COOKIE, "", { ...base, maxAge: 0 });
   store.set(REFRESH_COOKIE, "", { ...base, maxAge: 0 });
   store.set(USER_COOKIE, "", { ...base, maxAge: 0 });

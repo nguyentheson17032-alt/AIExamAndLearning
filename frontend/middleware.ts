@@ -9,12 +9,14 @@ export function middleware(request: NextRequest) {
   const signedIn =
     Boolean(request.cookies.get(ACCESS_COOKIE)?.value) ||
     Boolean(request.cookies.get(REFRESH_COOKIE)?.value);
+  const requestHeaders = new Headers(request.headers);
+  requestHeaders.set("x-pathname", `${pathname}${request.nextUrl.search}`);
 
   if (PUBLIC_PATHS.has(pathname)) {
     if (signedIn) {
       return NextResponse.redirect(new URL("/", request.url));
     }
-    return NextResponse.next();
+    return NextResponse.next({ request: { headers: requestHeaders } });
   }
 
   if (!signedIn) {
@@ -23,11 +25,11 @@ export function middleware(request: NextRequest) {
     return NextResponse.redirect(login);
   }
 
-  return NextResponse.next();
+  return NextResponse.next({ request: { headers: requestHeaders } });
 }
 
 export const config = {
   matcher: [
-    "/((?!_next/static|_next/image|favicon.ico|api/session/clear|.*\\.(?:svg|png|jpg|jpeg|gif|webp)$).*)",
+    "/((?!_next/static|_next/image|favicon.ico|api/session/clear|api/session/refresh|.*\\.(?:svg|png|jpg|jpeg|gif|webp)$).*)",
   ],
 };

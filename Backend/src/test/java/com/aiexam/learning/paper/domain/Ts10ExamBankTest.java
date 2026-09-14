@@ -31,5 +31,10 @@ class Ts10ExamBankTest {
                 .map(Ts10ExamBank.Item::answerKey)
                 .toList();
         assertThat(partOneKeys).containsExactly("B", "D", "B", "B", "A", "A", "D", "D", "C", "B", "A", "B");
+        Ts10ExamBank.Item first = bank.exams().getFirst().questions().getFirst();
+        assertThat(first.stem()).contains("Phương trình nào sau đây");
+        assertThat(first.stem()).contains("[[img:/ts10/q/e01-i-01.png]]");
+        assertThat(first.stem()).doesNotContain("/ts10/image");
+        assertThat(first.explanation()).contains("[[img:/ts10/q/e01-sol-01.png]]");
     }
 }
