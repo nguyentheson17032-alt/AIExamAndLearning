@@ -5,9 +5,8 @@ import { requireUser } from "@/lib/guards";
 import { getSessionUser, persistSessionUser } from "@/lib/session";
 import type { Attempt, UserProfile } from "@/lib/types";
 import { revalidatePath } from "next/cache";
-import { redirect } from "next/navigation";
 
-export type AttemptFormState = { error: string } | null;
+export type AttemptFormState = { error: string } | { ok: true } | null;
 
 export async function submitAttemptAction(
   attemptId: string,
@@ -25,6 +24,10 @@ export async function submitAttemptAction(
       textAnswer: text || null,
     };
   });
+  const unanswered = answers.filter((answer) => !answer.selectedChoiceId && !answer.textAnswer).length;
+  if (unanswered > 0) {
+    return { error: `Còn ${unanswered} câu chưa làm. Trả lời hết rồi mới nộp bài.` };
+  }
   try {
     await backendFetch<Attempt>(`/api/v1/attempts/${attemptId}/submit`, {
       method: "POST",
@@ -46,6 +49,7 @@ export async function submitAttemptAction(
   }
   revalidatePath("/", "layout");
   revalidatePath("/attempts");
+  revalidatePath(`/attempts/${attemptId}`);
   revalidatePath("/me");
-  redirect(`/attempts/${attemptId}`);
+  return { ok: true };
 }

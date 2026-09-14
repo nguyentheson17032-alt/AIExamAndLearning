@@ -57,6 +57,7 @@ app:
     k-factor: 24
   seed:
     ts10-exam-set: ${SEED_TS10:true}
+    ts10-image-dir: ${TS10_IMAGE_DIR:}
   ai:
     enabled: ${APP_AI_ENABLED:false}
     model-name: ${OPENAI_MODEL:gpt-4o-mini}

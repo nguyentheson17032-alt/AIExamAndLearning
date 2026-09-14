@@ -2,7 +2,7 @@
 
 ## Overview
 
-PostgreSQL schema for the exam warehouse: users with Elo/rank, a question bank, paper sets (bộ đề), papers (exams, assignments, practice sets), attempts, Elo history, AI classification, and AI generation jobs.
+PostgreSQL schema for the exam warehouse: users with Elo/rank, a question bank, paper sets (bộ đề), papers (exams, assignments, practice sets), attempts, Elo history, AI classification, AI generation jobs, and PNG snapshots for TS10 stems/solutions.
 
 ## Diagram
 
@@ -21,6 +21,8 @@ erDiagram
     USER ||--o{ PAPER_SET : authors
     PAPER_SET ||--o{ PAPER : contains
     TOPIC ||--o{ QUESTION : groups
+    QUESTION_IMAGE ||--o{ QUESTION_IMAGE_REF : used_in
+    QUESTION ||--o{ QUESTION_IMAGE_REF : has
     QUESTION ||--o{ QUESTION_CHOICE : has
     QUESTION ||--o{ QUESTION_CLASSIFICATION : classified_as
     QUESTION ||--o{ PAPER_QUESTION : appears_in
@@ -91,6 +93,21 @@ erDiagram
         string status
         datetime createdAt
         datetime updatedAt
+    }
+
+    QUESTION_IMAGE {
+        uuid id PK
+        string filename UK
+        string contentType
+        bytes bytes
+        datetime createdAt
+    }
+
+    QUESTION_IMAGE_REF {
+        uuid id PK
+        uuid questionId FK
+        string role
+        uuid imageId FK
     }
 
     QUESTION_CHOICE {
@@ -282,6 +299,25 @@ erDiagram
 | created_at | datetime | NOT NULL | Created time |
 | updated_at | datetime | NOT NULL | Updated time |
 
+### QUESTION_IMAGE
+
+| Column | Type | Constraints | Description |
+| --- | --- | --- | --- |
+| id | UUID | PK | Unique identifier |
+| filename | string | UK, NOT NULL | Original snapshot name, e.g. e01-i-01.png |
+| content_type | string | NOT NULL | MIME type, image/png |
+| bytes | bytes | NOT NULL | PNG file contents |
+| created_at | datetime | NOT NULL | Created time |
+
+### QUESTION_IMAGE_REF
+
+| Column | Type | Constraints | Description |
+| --- | --- | --- | --- |
+| id | UUID | PK | Unique identifier |
+| question_id | UUID | FK QUESTION, NOT NULL | Question that shows the image |
+| role | string | NOT NULL | STEM or EXPLANATION |
+| image_id | UUID | FK QUESTION_IMAGE, NOT NULL | Snapshot bytes |
+
 ### QUESTION_CHOICE
 
 | Column | Type | Constraints | Description |
@@ -434,6 +470,8 @@ Unique: `(paper_id, question_id)`.
 | SUBJECT | QUESTION | 1:N | A subject categorizes many questions |
 | SUBJECT | PAPER | 1:N | A subject categorizes many papers |
 | TOPIC | QUESTION | 1:N | A topic groups many questions |
+| QUESTION | QUESTION_IMAGE_REF | 1:N | A question may have a stem snapshot and a lời giải snapshot |
+| QUESTION_IMAGE | QUESTION_IMAGE_REF | 1:N | A snapshot can be reused by many questions |
 | QUESTION | QUESTION_CHOICE | 1:N | A question has many choices |
 | QUESTION | QUESTION_CLASSIFICATION | 1:N | A question has classification history |
 | QUESTION | QUESTION | 1:N | A question may spawn similar questions |
@@ -450,7 +488,8 @@ Unique: `(paper_id, question_id)`.
 - IDs are UUID. Enums are stored as VARCHAR (`STRING` in JPA).
 - Rank codes from Elo: `BRONZE` < 1000, `SILVER` 1000–1199, `GOLD` 1200–1399, `PLATINUM` 1400–1599, `DIAMOND` ≥ 1600. New users start at Elo 1000 / `SILVER`.
 - Index foreign keys and list filters: `users.email`, `questions.subject_id`, `questions.elo_rating`, `papers.kind`, `papers.target_elo_min/max`, `attempts.user_id`, `elo_events.user_id`.
-- Unique: `users.email`, `subjects.code`, `refresh_tokens.token_hash`, `paper_questions(paper_id, question_id)`, `papers(paper_set_id, exam_number)` when `paper_set_id` is set.
+- Unique: `users.email`, `subjects.code`, `refresh_tokens.token_hash`, `paper_questions(paper_id, question_id)`, `papers(paper_set_id, exam_number)` when `paper_set_id` is set, `question_images.filename`, `question_image_refs(question_id, role)`.
+- TS10 cropped PNGs live in `QUESTION_IMAGE.bytes`. `QUESTION_IMAGE_REF` attaches them as STEM or EXPLANATION so listing papers does not load blobs and so the `questions` table does not need new columns. Part II ý a–d share one stem snapshot and one lời giải snapshot.
 - `PAPER_QUESTION.section_code` values: `PART_I` (12 multiple-choice × 0.25 = 3.0), `PART_II` (4 đúng/sai groups, official 0.1/0.25/0.5/1.0 scale, max 4.0), `PART_III` (6 short answers × 0.5 = 3.0). TS10 papers total 10 points. Elo uses `score / 10`.
 - `PAPER_QUESTION.group_key` lets the take-exam UI show one Part II câu (four ý a–d) as a single step.
 - Deleting a USER is not supported in v1 (accounts are disabled). Deleting a PAPER cascades to PAPER_QUESTION. Deleting a QUESTION that appears in papers is rejected at the service layer.

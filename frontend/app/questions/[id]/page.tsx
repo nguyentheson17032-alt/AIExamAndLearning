@@ -15,7 +15,7 @@ export default async function QuestionDetailPage({ params }: { params: Promise<{
       <PageHeader title="Question" description={`${question.type} · ${question.difficulty} · Elo ${question.eloRating}`} />
       <article className="space-y-4 rounded-xl border border-line bg-card p-6">
         <p>
-          <StemText text={promptStem(question.stem, question.choices.length > 0)} />
+          <StemText text={promptStem(question.stem, question.choices.length > 0)} imageId={question.stemImageId} />
         </p>
         {question.choices.length > 0 ? (
           <ul className="space-y-1 text-sm">
@@ -32,7 +32,11 @@ export default async function QuestionDetailPage({ params }: { params: Promise<{
             <span className="font-medium">Answer key:</span> {question.answerKey}
           </p>
         ) : null}
-        {question.explanation ? <p className="text-sm text-muted">{question.explanation}</p> : null}
+        {question.explanation ? (
+          <div className="text-sm text-muted">
+            <StemText text={question.explanation} imageId={question.explanationImageId} />
+          </div>
+        ) : null}
         <p className="text-xs text-muted">
           Bloom {question.bloomLevel ?? "—"} · {question.source} · {question.status}
         </p>

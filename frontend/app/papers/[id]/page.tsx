@@ -28,7 +28,7 @@ export default async function PaperDetailPage({ params }: { params: Promise<{ id
               {index + 1}. {item.question.type} · {item.points} pts
             </p>
             <p className="mt-1">
-              <StemText text={promptStem(item.question.stem, item.question.choices.length > 0)} />
+              <StemText text={promptStem(item.question.stem, item.question.choices.length > 0)} imageId={item.question.stemImageId} />
             </p>
             {teacher && item.question.answerKey ? (
               <p className="mt-2 text-sm text-accent">Key: {item.question.answerKey}</p>

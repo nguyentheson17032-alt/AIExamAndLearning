@@ -1,5 +1,5 @@
 import { PageHeader } from "@/components/page-header";
-import { StemText, promptStem, questionSnapshotSrc } from "@/components/stem-text";
+import { StemText, promptStem, storedImageSrc } from "@/components/stem-text";
 import { loadAttemptSolutions } from "@/lib/load-attempt";
 import { requireUser } from "@/lib/guards";
 import type { Choice } from "@/lib/types";
@@ -36,14 +36,21 @@ export default async function AttemptSolutionsPage({ params }: { params: Promise
         {items.map((item, index) => {
           const answer = answerByQuestion.get(item.questionId);
           const selected = item.question.choices.find((choice) => choice.id === answer?.selectedChoiceId);
-          const snapshot = questionSnapshotSrc(item.question.stem);
-          const previous = index > 0 ? questionSnapshotSrc(items[index - 1].question.stem) : null;
+          const snapshot = storedImageSrc(item.question.stemImageId, item.question.stem);
+          const previous = index > 0
+            ? storedImageSrc(items[index - 1].question.stemImageId, items[index - 1].question.stem)
+            : null;
           const showStem = !snapshot || snapshot !== previous;
           const explanation = item.question.explanation ?? "";
-          const explSnap = questionSnapshotSrc(explanation);
+          const explSnap = storedImageSrc(item.question.explanationImageId, explanation);
           const previousExpl =
-            index > 0 ? questionSnapshotSrc(items[index - 1].question.explanation ?? "") : null;
-          const showExpl = Boolean(explanation) && (!explSnap || explSnap !== previousExpl);
+            index > 0
+              ? storedImageSrc(
+                  items[index - 1].question.explanationImageId,
+                  items[index - 1].question.explanation ?? "",
+                )
+              : null;
+          const showExpl = Boolean(explanation || explSnap) && (!explSnap || explSnap !== previousExpl);
           return (
             <li key={item.questionId} className="rounded-xl border border-line bg-card p-5">
               <p className="text-xs text-muted">
@@ -51,7 +58,7 @@ export default async function AttemptSolutionsPage({ params }: { params: Promise
               </p>
               {showStem ? (
                 <p className="mt-2">
-                  <StemText text={promptStem(item.question.stem, item.question.choices.length > 0)} />
+                  <StemText text={promptStem(item.question.stem, item.question.choices.length > 0)} imageId={item.question.stemImageId} />
                 </p>
               ) : null}
               <p className="mt-3 text-sm">Bài làm: {submittedWork(selected, answer?.textAnswer)}</p>
@@ -62,7 +69,7 @@ export default async function AttemptSolutionsPage({ params }: { params: Promise
               </p>
               {showExpl ? (
                 <div className="mt-3 rounded-md border border-line px-3 py-2 text-sm">
-                  <StemText text={explanation} />
+                  <StemText text={explanation} imageId={item.question.explanationImageId} />
                 </div>
               ) : null}
               {answer?.aiFeedback ? <p className="mt-2 text-sm text-muted">{answer.aiFeedback}</p> : null}

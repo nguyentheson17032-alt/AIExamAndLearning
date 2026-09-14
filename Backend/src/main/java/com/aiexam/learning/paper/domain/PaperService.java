@@ -9,10 +9,12 @@ import com.aiexam.learning.paper.api.PaperCreateRequest;
 import com.aiexam.learning.paper.api.PaperGenerateRequest;
 import com.aiexam.learning.paper.api.PaperQuestionRequest;
 import com.aiexam.learning.paper.api.PaperResponse;
+import com.aiexam.learning.paper.infrastructure.PaperQuestionRepository;
 import com.aiexam.learning.paper.infrastructure.PaperRepository;
 import com.aiexam.learning.question.domain.ContentStatus;
 import com.aiexam.learning.question.domain.Question;
 import com.aiexam.learning.question.domain.QuestionService;
+import com.aiexam.learning.question.domain.QuestionType;
 import com.aiexam.learning.question.infrastructure.QuestionRepository;
 import com.aiexam.learning.user.domain.User;
 import com.aiexam.learning.user.infrastructure.UserRepository;
@@ -21,10 +23,11 @@ import org.springframework.data.domain.Pageable;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
-import java.math.BigDecimal;
 import java.util.Collections;
+import java.util.LinkedHashMap;
 import java.util.LinkedHashSet;
 import java.util.List;
+import java.util.Map;
 import java.util.UUID;
 
 @Service
@@ -33,6 +36,7 @@ import java.util.UUID;
 public class PaperService {
 
     private final PaperRepository paperRepository;
+    private final PaperQuestionRepository paperQuestionRepository;
     private final QuestionRepository questionRepository;
     private final QuestionService questionService;
     private final CatalogService catalogService;
@@ -65,36 +69,134 @@ public class PaperService {
 
     @Transactional
     public PaperResponse generate(UUID authorId, PaperGenerateRequest request) {
-        int min = request.targetEloMin() == null ? 800 : request.targetEloMin();
-        int max = request.targetEloMax() == null ? 1600 : request.targetEloMax();
-        List<Question> pool = questionRepository.findPublishedInEloRange(
-                request.subjectId(), ContentStatus.PUBLISHED, min, max);
-        if (pool.size() < request.questionCount()) {
+        PaperSection section = request.section();
+        int min = request.targetEloMin() == null ? PaperGenerateRules.defaultEloMin(section) : request.targetEloMin();
+        int max = request.targetEloMax() == null ? PaperGenerateRules.defaultEloMax(section) : request.targetEloMax();
+        if (min > max) {
+            throw new BusinessRuleException("INVALID_ELO_RANGE", "targetEloMin must be <= targetEloMax");
+        }
+        String sectionTitle = PaperGenerateRules.sectionTitle(section);
+        String title = request.title() == null || request.title().isBlank()
+                ? "Đề " + sectionTitle + " tự động"
+                : request.title();
+        int duration = PaperGenerateRules.durationMinutes(section, request.questionCount());
+        User author = user(authorId);
+        Subject subject = catalogService.getSubject(request.subjectId());
+        Paper paper = newPracticePaper(author, subject, title, sectionTitle, min, max, duration);
+        if (section == PaperSection.PART_II) {
+            addPartTwoGroups(paper, request.subjectId(), min, max, request.questionCount(), sectionTitle);
+        } else {
+            addShuffledQuestions(paper, request.subjectId(), section, min, max, request.questionCount(), sectionTitle);
+        }
+        return PaperResponse.from(paperRepository.save(paper), true);
+    }
+
+    private Paper newPracticePaper(
+            User author,
+            Subject subject,
+            String title,
+            String sectionTitle,
+            int min,
+            int max,
+            int duration
+    ) {
+        return Paper.create(
+                author,
+                subject,
+                title,
+                "Generated " + sectionTitle + " from Elo " + min + "-" + max,
+                PaperKind.PRACTICE,
+                PaperSource.MANUAL,
+                duration,
+                min,
+                max,
+                ContentStatus.PUBLISHED
+        );
+    }
+
+    private void addShuffledQuestions(
+            Paper paper,
+            UUID subjectId,
+            PaperSection section,
+            int min,
+            int max,
+            int questionCount,
+            String sectionTitle
+    ) {
+        QuestionType type = PaperGenerateRules.questionType(section);
+        List<Question> pool = questionRepository.findPublishedInEloRangeAndType(
+                subjectId, ContentStatus.PUBLISHED, type, min, max);
+        if (pool.size() < questionCount) {
             throw new BusinessRuleException(
                     "NOT_ENOUGH_QUESTIONS",
-                    "Not enough published questions in Elo range " + min + "-" + max
+                    "Not enough published " + type.name().toLowerCase() + " questions in Elo range " + min + "-" + max
             );
         }
         Collections.shuffle(pool);
-        List<Question> selected = pool.subList(0, request.questionCount());
-        String title = request.title() == null || request.title().isBlank()
-                ? "Đề " + request.kind().name().toLowerCase() + " tự động"
-                : request.title();
-        PaperCreateRequest createRequest = new PaperCreateRequest(
-                request.subjectId(),
-                title,
-                "Generated from the question bank to match Elo " + min + "-" + max,
-                request.kind(),
-                PaperSource.MANUAL,
-                request.durationMinutes(),
-                min,
-                max,
-                ContentStatus.PUBLISHED,
-                selected.stream()
-                        .map(question -> new PaperQuestionRequest(question.getId(), BigDecimal.ONE))
+        int order = 1;
+        for (Question question : pool.subList(0, questionCount)) {
+            paper.addQuestion(
+                    question,
+                    order,
+                    PaperGenerateRules.points(section),
+                    section,
+                    sectionTitle,
+                    String.valueOf(order),
+                    null
+            );
+            order++;
+        }
+    }
+
+    private void addPartTwoGroups(
+            Paper paper,
+            UUID subjectId,
+            int min,
+            int max,
+            int groupCount,
+            String sectionTitle
+    ) {
+        List<PaperQuestion> rows = paperQuestionRepository.findGroupedSectionItems(
+                subjectId, PaperSection.PART_II, ContentStatus.PUBLISHED, min, max);
+        Map<UUID, Question> questions = new LinkedHashMap<>();
+        for (PaperQuestion row : rows) {
+            questions.putIfAbsent(row.getQuestion().getId(), row.getQuestion());
+        }
+        List<List<PaperGenerateRules.SourceItem>> groups = PaperGenerateRules.completePartTwoGroups(
+                rows.stream()
+                        .map(row -> new PaperGenerateRules.SourceItem(
+                                row.getPaper().getId(),
+                                row.getGroupKey(),
+                                row.getQuestion().getId(),
+                                row.getSortOrder()))
                         .toList()
         );
-        return create(authorId, createRequest);
+        if (groups.size() < groupCount) {
+            throw new BusinessRuleException(
+                    "NOT_ENOUGH_QUESTIONS",
+                    "Not enough Phần II groups (4 ý a–d) in Elo range " + min + "-" + max
+            );
+        }
+        Collections.shuffle(groups);
+        int order = 1;
+        int groupNumber = 1;
+        for (List<PaperGenerateRules.SourceItem> group : groups.subList(0, groupCount)) {
+            String groupKey = PaperGenerateRules.partTwoGroupKey(groupNumber);
+            int index = 0;
+            for (PaperGenerateRules.SourceItem item : group) {
+                paper.addQuestion(
+                        questions.get(item.questionId()),
+                        order++,
+                        PaperGenerateRules.points(PaperSection.PART_II),
+                        PaperSection.PART_II,
+                        sectionTitle,
+                        PaperGenerateRules.partTwoItemLabel(groupNumber, index),
+                        groupKey
+                );
+                index++;
+            }
+            groupNumber++;
+        }
     }
 
     public PaperResponse get(UUID id, boolean includeAnswer) {

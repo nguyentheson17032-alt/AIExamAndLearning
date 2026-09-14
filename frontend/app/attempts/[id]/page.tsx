@@ -54,7 +54,7 @@ export default async function AttemptDetailPage({ params }: { params: Promise<{ 
                   {item.sectionTitle ? ` · ${item.sectionTitle}` : ""}
                 </p>
                 <p className="mt-1">
-                  <StemText text={promptStem(item.question.stem, item.question.choices.length > 0)} />
+                  <StemText text={promptStem(item.question.stem, item.question.choices.length > 0)} imageId={item.question.stemImageId} />
                 </p>
                 <p className="mt-2 text-sm">
                   {answer?.correct == null ? "Chưa chấm" : answer.correct ? "Đúng" : "Sai"}

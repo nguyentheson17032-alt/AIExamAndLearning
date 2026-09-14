@@ -9,7 +9,7 @@ export default async function GeneratePaperPage() {
   const subjects = await backendFetch<PageResponse<Subject>>("/api/v1/subjects?size=100");
   return (
     <>
-      <PageHeader title="Generate paper" description="Auto-build from questions in an Elo range." />
+      <PageHeader title="Generate paper" description="Auto-build Phần I, II, or III from matching questions." />
       <PaperGenerateForm subjects={subjects.content} />
     </>
   );

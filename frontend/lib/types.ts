@@ -93,6 +93,8 @@ export type Question = {
   bloomLevel: BloomLevel | null;
   source: QuestionSource;
   status: ContentStatus;
+  stemImageId?: string | null;
+  explanationImageId?: string | null;
   choices: Choice[];
   createdAt: string;
 };

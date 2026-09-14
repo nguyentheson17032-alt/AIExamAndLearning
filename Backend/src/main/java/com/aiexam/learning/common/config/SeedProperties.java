@@ -6,4 +6,7 @@ import org.springframework.validation.annotation.Validated;
 
 @ConfigurationProperties(prefix = "app.seed")
 @Validated
-public record SeedProperties(@NotNull Boolean ts10ExamSet) {}
+public record SeedProperties(
+        @NotNull Boolean ts10ExamSet,
+        String ts10ImageDir
+) {}

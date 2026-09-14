@@ -2,6 +2,7 @@ package com.aiexam.learning.question.infrastructure;
 
 import com.aiexam.learning.question.domain.ContentStatus;
 import com.aiexam.learning.question.domain.Question;
+import com.aiexam.learning.question.domain.QuestionType;
 import org.springframework.data.domain.Page;
 import org.springframework.data.domain.Pageable;
 import org.springframework.data.jpa.repository.EntityGraph;
@@ -34,6 +35,22 @@ public interface QuestionRepository extends JpaRepository<Question, UUID> {
     List<Question> findPublishedInEloRange(
             @Param("subjectId") UUID subjectId,
             @Param("status") ContentStatus status,
+            @Param("minElo") int minElo,
+            @Param("maxElo") int maxElo
+    );
+
+    @Query("""
+            SELECT q FROM Question q
+            WHERE q.subject.id = :subjectId
+              AND q.status = :status
+              AND q.type = :type
+              AND q.eloRating BETWEEN :minElo AND :maxElo
+            ORDER BY q.eloRating ASC, q.id ASC
+            """)
+    List<Question> findPublishedInEloRangeAndType(
+            @Param("subjectId") UUID subjectId,
+            @Param("status") ContentStatus status,
+            @Param("type") QuestionType type,
             @Param("minElo") int minElo,
             @Param("maxElo") int maxElo
     );

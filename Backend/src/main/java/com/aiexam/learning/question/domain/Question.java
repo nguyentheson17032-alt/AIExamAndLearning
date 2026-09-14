@@ -20,6 +20,7 @@ import jakarta.persistence.Table;
 import lombok.AccessLevel;
 import lombok.Getter;
 import lombok.NoArgsConstructor;
+import org.hibernate.annotations.BatchSize;
 import org.hibernate.annotations.CreationTimestamp;
 import org.hibernate.annotations.UpdateTimestamp;
 
@@ -87,6 +88,10 @@ public class Question {
     private ContentStatus status;
 
     @OneToMany(mappedBy = "question", cascade = CascadeType.ALL, orphanRemoval = true)
+    @BatchSize(size = 64)
+    private List<QuestionImageRef> imageRefs = new ArrayList<>();
+
+    @OneToMany(mappedBy = "question", cascade = CascadeType.ALL, orphanRemoval = true)
     @OrderBy("sortOrder ASC")
     private List<QuestionChoice> choices = new ArrayList<>();
 
@@ -128,6 +133,33 @@ public class Question {
         question.status = status;
         question.similarTo = similarTo;
         return question;
+    }
+
+    public void attachImages(UUID stemImageId, UUID explanationImageId) {
+        imageRefs.removeIf(ref ->
+                QuestionImageRef.STEM.equals(ref.getRole()) || QuestionImageRef.EXPLANATION.equals(ref.getRole()));
+        if (stemImageId != null) {
+            imageRefs.add(QuestionImageRef.create(this, QuestionImageRef.STEM, stemImageId));
+        }
+        if (explanationImageId != null) {
+            imageRefs.add(QuestionImageRef.create(this, QuestionImageRef.EXPLANATION, explanationImageId));
+        }
+    }
+
+    public UUID getStemImageId() {
+        return imageId(QuestionImageRef.STEM);
+    }
+
+    public UUID getExplanationImageId() {
+        return imageId(QuestionImageRef.EXPLANATION);
+    }
+
+    private UUID imageId(String role) {
+        return imageRefs.stream()
+                .filter(ref -> role.equals(ref.getRole()))
+                .map(QuestionImageRef::getImageId)
+                .findFirst()
+                .orElse(null);
     }
 
     public void addChoice(String label, String content, boolean correct, int sortOrder) {

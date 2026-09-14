@@ -66,6 +66,10 @@ public class AttemptService {
         }
         Map<UUID, PaperQuestion> items = attempt.getPaper().getItems().stream()
                 .collect(Collectors.toMap(item -> item.getQuestion().getId(), Function.identity()));
+        List<UUID> missing = AttemptCompleteness.unanswered(items.keySet(), request.answers());
+        if (!missing.isEmpty()) {
+            throw new BusinessRuleException("INCOMPLETE_ATTEMPT", "Answer every question before submitting");
+        }
         for (AnswerSubmitRequest submitted : request.answers()) {
             PaperQuestion item = items.get(submitted.questionId());
             if (item == null) {

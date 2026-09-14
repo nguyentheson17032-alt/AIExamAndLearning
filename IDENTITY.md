@@ -922,3 +922,143 @@ Log of user–AI collaboration per `todo.md` phase: work done, user prompts, ski
 - All Phase 30 tasks marked `[x]`
 - `npm test` passed (8)
 - Planned commit: `fix(frontend): format dates without hydration mismatch`
+
+## Phase 31: Store TS10 Snapshots in Database
+
+**Status:** completed
+
+### Work
+
+- Added `question_images` / `question_image_refs` (Flyway V8) instead of altering `questions` (user `exam` is not table owner)
+- Seed/backfill reads cropped PNGs from `frontend/public/ts10/q` and stores BYTEA; Part II a–d share one stem and one lời giải file
+- `GET /api/v1/question-images/{id}` plus Next.js `/api/question-images/[id]` proxy
+- Take-exam, papers, questions, and solutions render `stemImageId` / `explanationImageId`
+- Startup log: attached 1320 unique files to 1020 questions; browser verified đề 1 stem + lời giải from `/api/question-images/{uuid}`
+
+### User prompts
+
+1. > bây h tôi muốn cho tất cả ảnh b chụp từ @thuvienhoclieu.com-Bo-30-De-toan-tuyen-sinh-10-nam-25-26-CTM-giai-chi-tiet.docx vào database thì phải làm như thế nào
+
+### Skills used
+
+- `erd` — QUESTION_IMAGE / QUESTION_IMAGE_REF before Flyway
+- `identity` — logged this phase
+- `project-todo` — Phase 31 in todo.md
+
+### Rules used
+
+- `erd.mdc` — schema in ERD.md before tables
+- `karpathy-guidelines.mdc` — separate image tables, no `questions` ALTER
+- User browser rule — verified take-exam and solutions PNGs load from the API
+- User git rule — do not commit unless asked
+
+### Outcome
+
+- All Phase 31 tasks marked `[x]`
+- Take-exam: 22 API images loaded; solutions: 44 API images loaded (stem + lời giải), none from `/ts10/q/`
+- Planned commit: `feat(images): store TS10 snapshots in postgres`
+
+## Phase 32: Complete Answers Before Submit
+
+**Status:** completed
+
+### Work
+
+- Take-exam shows a **Tiến độ làm bài** grid: teal = done, orange = unanswered; click jumps to that câu
+- **Nộp bài** stays disabled until all 34 items have an answer; form submit also jumps to the first unanswered câu
+- Server action and backend `INCOMPLETE_ATTEMPT` reject partial submits
+- Tests: `exam-steps` nav items + `AttemptCompletenessTest`
+- Submit builds FormData from React state (hidden sections were dropping radio values; React then reset the form)
+- Draft answers persist in sessionStorage; successful submit navigates on the client instead of `redirect()` (avoids a blank Application error)
+
+### User prompts
+
+1. > thếm luật là ko trả lời full tất cả các câu không được nộp bài và làm 1 ô để hiện thị những câu đã làm và chưa làm
+2. > tôi làm hết nhưng không nhấn nộp bài được rồi các đáp tôi chọn bị biến mất, tôi nhấn nộp bài tiếp nó hiện còn 34 câu chưa làm
+
+### Skills used
+
+- `identity` — logged this phase
+- `project-todo` — Phase 32 in todo.md
+
+### Rules used
+
+- `karpathy-guidelines.mdc` — progress helpers on exam-steps, no extra components
+- User browser rule — đề 2: 0/34 then 1/34 after answering I.2; Nộp bài disabled
+- User git rule — do not commit unless asked
+
+### Outcome
+
+- All Phase 32 tasks marked `[x]`
+- `npm test` passed (11); `AttemptCompletenessTest` passed
+- Planned commit: `feat(attempts): require every question before submit`
+- Submit-from-state verified on Đề số 3: 34/34 persisted across reload, Nộp bài graded 1.75/10 with no blank Application error
+
+## Phase 33: Generate by Exam Part
+
+**Status:** completed
+
+### Work
+
+- Kind on `/papers/generate` is Phần I / II / III (not Exam/Assignment/Practice)
+- Question count max 99; duration is count × 2 / 6 / 3 and read-only
+- Elo defaults: 1000–1100, 1100–1200, 1200–3000
+- Generate picks published questions of the matching type in that Elo range as a PRACTICE paper
+- TS10 question Elo backfilled by part (1050 / 1150 / 1250) so the default ranges find them
+
+### User prompts
+
+1. > http://localhost:3000/papers/generate
+   > bây h tôi chọn
+   > - Kind nếu chọn Phần I - Trắc nghiệm thì Question count: điền <100, Duration (minutes): = Question count * 2, Elo: mặc định từ 1000 - 1100,
+   > - Kind nếu chọn Phần II - Đúng/sai, 4 nhóm × 4 ý a–d thì Question count: điền <100, Duration (minutes): = Question count * 6, Elo: mặc định từ 1100 - 1200,
+   > - Kind nếu chọn Phần III -Tự luận ngắn thì Question count: điền <100, Duration (minutes): = Question count * 3, Elo: mặc định từ 1200 trở lên,
+
+### Skills used
+
+- `project-todo` — Phase 33 in todo.md
+- `identity` — logged this phase
+
+### Rules used
+
+- `karpathy-guidelines.mdc` — defaults in PaperGenerateRules / paper-generate.ts, no extra form components
+- User browser rule — Kind I/II/III defaults; generated Đề Phần III tự động 5 SHORT_ANSWER, 15 min, Elo 1200–3000
+- User git rule — do not commit unless asked
+
+### Outcome
+
+- All Phase 33 tasks marked `[x]`
+- `npm test` passed (15); `PaperGenerateRulesTest` passed
+- Planned commit: `feat(papers): generate by TS10 exam part`
+
+## Phase 34: Generate Part II Groups
+
+**Status:** completed
+
+### Work
+
+- Generate Phần II now picks complete groups of 4 TRUE_FALSE items (ý a–d) instead of single statements
+- Paper items get `groupKey` `II.n` and labels `II.na`–`II.nd` so take-exam shows one stem and 4 Đúng/Sai radios
+- `completePartTwoGroups` drops incomplete groups and dedupes by questionId (JOIN FETCH choices had cartesian-duplicated rows)
+- Browser check: generated paper with count 2 → 8 items; attempt shows Câu 1/2 with II.1a–d
+
+### User prompts
+
+1. > tôi generate Phần II thì phải có 4 ý chọn chứ
+
+### Skills used
+
+- identity
+- project-todo
+
+### Rules used
+
+- project-todo.mdc
+- identity.mdc
+- karpathy-guidelines.mdc
+
+### Outcome
+
+- All Phase 34 tasks marked `[x]`
+- Take-exam for a new Phần II paper shows 4 ý a–d per câu
+- Planned commit: `feat(papers): generate Part II as 4-item groups`

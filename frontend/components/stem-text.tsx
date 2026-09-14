@@ -7,6 +7,13 @@ export function questionSnapshotSrc(text: string): string | null {
   return match ? match[1] : null;
 }
 
+export function storedImageSrc(imageId?: string | null, text?: string | null): string | null {
+  if (imageId) {
+    return `/api/question-images/${imageId}`;
+  }
+  return text ? questionSnapshotSrc(text) : null;
+}
+
 export function promptStem(text: string, hasChoices = false): string {
   if (!hasChoices) {
     return text;
@@ -18,8 +25,16 @@ export function promptStem(text: string, hasChoices = false): string {
   return cut ? text.slice(0, cut.index).trim() : text;
 }
 
-export function StemText({ text, className = "" }: { text: string; className?: string }) {
-  const snapshot = questionSnapshotSrc(text);
+export function StemText({
+  text,
+  imageId,
+  className = "",
+}: {
+  text: string;
+  imageId?: string | null;
+  className?: string;
+}) {
+  const snapshot = storedImageSrc(imageId, text);
   if (snapshot) {
     return (
       <img

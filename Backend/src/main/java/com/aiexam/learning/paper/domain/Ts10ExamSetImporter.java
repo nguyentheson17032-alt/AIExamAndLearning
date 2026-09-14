@@ -1,9 +1,7 @@
 package com.aiexam.learning.paper.domain;
 
-import com.aiexam.learning.attempt.infrastructure.AttemptRepository;
 import com.aiexam.learning.catalog.domain.Subject;
 import com.aiexam.learning.catalog.infrastructure.SubjectRepository;
-import com.aiexam.learning.elo.infrastructure.EloEventRepository;
 import com.aiexam.learning.paper.infrastructure.PaperRepository;
 import com.aiexam.learning.paper.infrastructure.PaperSetRepository;
 import com.aiexam.learning.question.domain.BloomLevel;
@@ -25,7 +23,6 @@ import org.springframework.transaction.annotation.Transactional;
 
 import java.io.InputStream;
 import java.util.List;
-import java.util.UUID;
 
 @Service
 @RequiredArgsConstructor
@@ -41,60 +38,59 @@ public class Ts10ExamSetImporter {
     private final SubjectRepository subjectRepository;
     private final UserRepository userRepository;
     private final PasswordEncoder passwordEncoder;
-    private final AttemptRepository attemptRepository;
-    private final EloEventRepository eloEventRepository;
+    private final Ts10SnapshotStore ts10SnapshotStore;
 
     @Transactional
     public PaperSet importIfAbsent() {
         Ts10ExamBank.Bank bank = readBank();
         return paperSetRepository.findByAcademicYearAndTitle(bank.academicYear(), bank.title())
-                .map(existing -> stale(existing) ? replace(existing, bank) : existing)
+                .map(this::ensureImportedDetails)
                 .orElseGet(() -> importBank(bank));
     }
 
-    private boolean stale(PaperSet set) {
+    private PaperSet ensureImportedDetails(PaperSet set) {
         List<Paper> papers = paperRepository.findByPaperSetIdOrderByExamNumberAsc(set.getId());
-        if (papers.isEmpty() || papers.getFirst().getItems().isEmpty()) {
-            return true;
-        }
-        String stem = papers.getFirst().getItems().getFirst().getQuestion().getStem();
-        String explanation = papers.getFirst().getItems().getFirst().getQuestion().getExplanation();
-        return stem == null || !stem.contains("[[img:/ts10/q/")
-                || stem.contains("/ts10/image")
-                || explanation == null || !explanation.contains("-sol-");
-    }
-
-    private PaperSet replace(PaperSet existing, Ts10ExamBank.Bank bank) {
-        List<Paper> papers = paperRepository.findByPaperSetIdOrderByExamNumberAsc(existing.getId());
-        List<UUID> paperIds = papers.stream().map(Paper::getId).toList();
-        List<UUID> questionIds = papers.stream()
-                .flatMap(paper -> paper.getItems().stream())
-                .map(item -> item.getQuestion().getId())
-                .distinct()
-                .toList();
-        if (!paperIds.isEmpty()) {
-            List<UUID> attemptIds = attemptRepository.findByPaper_IdIn(paperIds).stream()
-                    .map(attempt -> attempt.getId())
-                    .toList();
-            if (!attemptIds.isEmpty()) {
-                eloEventRepository.deleteByAttempt_IdIn(attemptIds);
+        var images = ts10SnapshotStore.newCache();
+        int imagesUpdated = 0;
+        int eloUpdated = 0;
+        for (Paper paper : papers) {
+            for (PaperQuestion item : paper.getItems()) {
+                Question question = item.getQuestion();
+                boolean dirty = false;
+                if (question.getStemImageId() == null || question.getExplanationImageId() == null) {
+                    question.attachImages(
+                            ts10SnapshotStore.load(Ts10SnapshotStore.filenameIn(question.getStem()), images),
+                            ts10SnapshotStore.load(Ts10SnapshotStore.filenameIn(question.getExplanation()), images)
+                    );
+                    imagesUpdated++;
+                    dirty = true;
+                }
+                if (item.getSection() != null) {
+                    int elo = PaperGenerateRules.questionElo(item.getSection());
+                    if (question.getEloRating() != elo) {
+                        question.applyClassification(question.getDifficulty(), elo, question.getBloomLevel());
+                        eloUpdated++;
+                        dirty = true;
+                    }
+                }
+                if (dirty) {
+                    questionRepository.save(question);
+                }
             }
-            attemptRepository.deleteByPaper_IdIn(paperIds);
-            paperRepository.deleteAll(papers);
         }
-        if (!questionIds.isEmpty()) {
-            eloEventRepository.deleteByQuestion_IdIn(questionIds);
-            questionRepository.deleteAllById(questionIds);
+        if (imagesUpdated > 0) {
+            log.info("Attached TS10 snapshots to {} questions using {} files", imagesUpdated, images.size());
         }
-        paperSetRepository.delete(existing);
-        paperSetRepository.flush();
-        log.info("Replaced stale TS10 exam set {}", existing.getTitle());
-        return importBank(bank);
+        if (eloUpdated > 0) {
+            log.info("Updated Elo on {} TS10 questions to match exam parts", eloUpdated);
+        }
+        return set;
     }
 
     private PaperSet importBank(Ts10ExamBank.Bank bank) {
         User author = teacher();
         Subject math = math();
+        var images = ts10SnapshotStore.newCache();
         PaperSet set = paperSetRepository.save(PaperSet.create(
                 author,
                 math,
@@ -129,7 +125,7 @@ public class Ts10ExamSetImporter {
                         item.answerKey(),
                         item.explanation(),
                         Difficulty.INTERMEDIATE,
-                        1200,
+                        PaperGenerateRules.questionElo(item.section()),
                         BloomLevel.APPLY,
                         QuestionSource.UPLOAD,
                         ContentStatus.PUBLISHED,
@@ -141,6 +137,10 @@ public class Ts10ExamSetImporter {
                         question.addChoice(choice.label(), choice.content(), choice.correct(), order++);
                     }
                 }
+                question.attachImages(
+                        ts10SnapshotStore.load(Ts10SnapshotStore.filenameIn(item.stem()), images),
+                        ts10SnapshotStore.load(Ts10SnapshotStore.filenameIn(item.explanation()), images)
+                );
                 question = questionRepository.save(question);
                 paper.addQuestion(
                         question,
@@ -154,7 +154,8 @@ public class Ts10ExamSetImporter {
             }
             paperRepository.save(paper);
         }
-        log.info("Imported TS10 exam set {} with {} papers", bank.title(), bank.exams().size());
+        log.info("Imported TS10 exam set {} with {} papers and {} snapshot files",
+                bank.title(), bank.exams().size(), images.size());
         return set;
     }
 

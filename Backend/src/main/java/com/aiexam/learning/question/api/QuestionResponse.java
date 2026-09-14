@@ -26,6 +26,8 @@ public record QuestionResponse(
         BloomLevel bloomLevel,
         QuestionSource source,
         ContentStatus status,
+        UUID stemImageId,
+        UUID explanationImageId,
         List<ChoiceResponse> choices,
         Instant createdAt
 ) {
@@ -52,6 +54,8 @@ public record QuestionResponse(
                 question.getBloomLevel(),
                 question.getSource(),
                 question.getStatus(),
+                question.getStemImageId(),
+                includeAnswer ? question.getExplanationImageId() : null,
                 choices,
                 question.getCreatedAt()
         );

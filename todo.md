@@ -203,3 +203,33 @@
 - [x] Add formatDateTime with a fixed locale and timezone
 - [x] Use formatDateTime on attempts and rank pages
 - [x] Add formatDateTime tests
+
+## Phase 31: Store TS10 Snapshots in Database
+
+- [x] Update ERD.md with QUESTION_IMAGE and question image FKs
+- [x] Add Flyway migration, QuestionImage entity, and repository
+- [x] Seed TS10 snapshot PNGs into the database when importing the exam set
+- [x] Add authenticated GET API for question images
+- [x] Render take-exam and solutions images from the API
+- [x] Add tests for snapshot filename parsing and the image API
+
+## Phase 32: Complete Answers Before Submit
+
+- [x] Block submit until every question on the paper has an answer
+- [x] Show a progress box of answered and unanswered questions on take-exam
+- [x] Add tests for completeness and question nav items
+- [x] Submit from React answer state so hidden questions are not dropped
+
+## Phase 33: Generate by Exam Part
+
+- [x] Add generate defaults for Phần I/II/III (count max 99, duration, Elo)
+- [x] Update generate form Kind options and auto duration/Elo
+- [x] Filter generated papers by question type for the selected part
+- [x] Assign TS10 question Elo by part so the default ranges match
+- [x] Add tests for generate defaults
+
+## Phase 34: Generate Part II Groups
+
+- [x] Pick complete Phần II groups of 4 ý a–d when generating
+- [x] Keep groupKey so take-exam shows 4 Đúng/Sai
+- [x] Add tests for grouping 4 items

@@ -49,11 +49,12 @@ export async function generatePaperAction(
   await requireTeacher();
   const payload = {
     subjectId: String(formData.get("subjectId") ?? ""),
-    kind: String(formData.get("kind") ?? "PRACTICE"),
+    kind: "PRACTICE",
+    section: String(formData.get("section") ?? "PART_I"),
     questionCount: Number(formData.get("questionCount") ?? 5),
-    durationMinutes: Number(formData.get("durationMinutes") ?? 30),
-    targetEloMin: Number(formData.get("targetEloMin") ?? 800),
-    targetEloMax: Number(formData.get("targetEloMax") ?? 1400),
+    durationMinutes: Number(formData.get("durationMinutes") ?? 10),
+    targetEloMin: Number(formData.get("targetEloMin") ?? 1000),
+    targetEloMax: Number(formData.get("targetEloMax") ?? 1100),
     title: String(formData.get("title") ?? "").trim() || null,
   };
   let paper: Paper;
