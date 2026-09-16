@@ -8,12 +8,17 @@ export type ExamStep = {
 
 export type ExamNavItem = {
   questionId: string;
+  questionIds: string[];
   label: string;
   stepIndex: number;
 };
 
 export function isAnswered(value: string | null | undefined): boolean {
   return Boolean(value?.trim());
+}
+
+export function isStepAnswered(item: ExamNavItem, answers: Record<string, string>): boolean {
+  return item.questionIds.every((questionId) => isAnswered(answers[questionId]));
 }
 
 export function isWrittenQuestion(type: PaperItem["question"]["type"]): boolean {
@@ -35,13 +40,20 @@ export function examSubmitFormData(items: PaperItem[], answers: Record<string, s
 }
 
 export function examNavItems(steps: ExamStep[]): ExamNavItem[] {
-  return steps.flatMap((step, stepIndex) =>
-    step.items.map((item) => ({
-      questionId: item.questionId,
-      label: item.itemLabel || step.groupKey,
-      stepIndex,
-    })),
-  );
+  return steps.map((step, stepIndex) => ({
+    questionId: step.items[0].questionId,
+    questionIds: step.items.map((item) => item.questionId),
+    label: stepNavLabel(step),
+    stepIndex,
+  }));
+}
+
+function stepNavLabel(step: ExamStep): string {
+  const first = step.items[0];
+  if (step.items.length > 1 && first.groupKey) {
+    return first.groupKey;
+  }
+  return first.itemLabel || step.groupKey;
 }
 
 export function examSteps(items: PaperItem[]): ExamStep[] {

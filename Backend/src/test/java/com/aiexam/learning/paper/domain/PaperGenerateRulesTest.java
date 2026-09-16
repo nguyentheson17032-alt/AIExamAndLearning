@@ -59,7 +59,9 @@ class PaperGenerateRulesTest {
         assertThat(groups).hasSize(1);
         assertThat(groups.getFirst()).extracting(PaperGenerateRules.SourceItem::questionId)
                 .containsExactly(q1, q2, q3, q4);
+        assertThat(PaperGenerateRules.partOneItemLabel(1)).isEqualTo("I.1");
         assertThat(PaperGenerateRules.partTwoItemLabel(2, 0)).isEqualTo("II.2a");
         assertThat(PaperGenerateRules.partTwoItemLabel(2, 3)).isEqualTo("II.2d");
+        assertThat(PaperGenerateRules.partThreeItemLabel(2)).isEqualTo("III.2");
     }
 }

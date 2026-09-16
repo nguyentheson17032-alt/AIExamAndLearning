@@ -80,8 +80,16 @@ public final class PaperGenerateRules {
         return section == PaperSection.PART_III ? Ts10Scoring.PART_III_POINTS : Ts10Scoring.PART_I_POINTS;
     }
 
+    public static String partOneItemLabel(int questionNumber) {
+        return "I." + questionNumber;
+    }
+
     public static String partTwoGroupKey(int groupNumber) {
         return "II." + groupNumber;
+    }
+
+    public static String partThreeItemLabel(int questionNumber) {
+        return "III." + questionNumber;
     }
 
     public static String partTwoItemLabel(int groupNumber, int indexInGroup) {

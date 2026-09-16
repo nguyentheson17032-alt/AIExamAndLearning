@@ -1,7 +1,7 @@
 "use client";
 
 import { submitAttemptAction, type AttemptFormState } from "@/lib/attempt-actions";
-import { examNavItems, examSteps, examSubmitFormData, isAnswered, isWrittenQuestion } from "@/lib/exam-steps";
+import { examNavItems, examSteps, examSubmitFormData, isStepAnswered, isWrittenQuestion } from "@/lib/exam-steps";
 import { ProblemAlert } from "@/components/problem-alert";
 import { StemText, promptStem, storedImageSrc } from "@/components/stem-text";
 import { SubmitButton } from "@/components/submit-button";
@@ -24,7 +24,7 @@ export function TakeExamForm({ attemptId, paper }: { attemptId: string; paper: P
   const [restored, setRestored] = useState(false);
   const step = steps[current];
   const last = current === steps.length - 1;
-  const doneCount = nav.filter((item) => isAnswered(answers[item.questionId])).length;
+  const doneCount = nav.filter((item) => isStepAnswered(item, answers)).length;
   const complete = nav.length > 0 && doneCount === nav.length;
   const remaining = nav.length - doneCount;
 
@@ -66,7 +66,7 @@ export function TakeExamForm({ attemptId, paper }: { attemptId: string; paper: P
   function onSubmit(event: FormEvent<HTMLFormElement>) {
     event.preventDefault();
     if (!complete) {
-      const firstOpen = nav.find((item) => !isAnswered(answers[item.questionId]));
+      const firstOpen = nav.find((item) => !isStepAnswered(item, answers));
       if (firstOpen) {
         setCurrent(firstOpen.stepIndex);
       }
@@ -88,7 +88,7 @@ export function TakeExamForm({ attemptId, paper }: { attemptId: string; paper: P
         </p>
         <div className="mt-3 flex flex-wrap gap-1.5">
           {nav.map((item) => {
-            const done = isAnswered(answers[item.questionId]);
+            const done = isStepAnswered(item, answers);
             const active = item.stepIndex === current;
             return (
               <button

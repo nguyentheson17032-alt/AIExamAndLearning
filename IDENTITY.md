@@ -1140,4 +1140,41 @@ Started: 2026-09-16
 - All Phase 36 tasks marked `[x]`
 - Frontend tests passed (20); backend picker/AI/heuristic tests passed
 - Choosing Đúng when the bank key is Sai is marked incorrect and gets 0 points
-- Planned commit: `fix(practice): grade bank true/false groups from kho đề`
+- Planned commit: `fix(practice): pick bank questions and grade true/false by choice`
+
+## Phase 37: Practice Paper Nav Order
+
+**Status:** completed
+
+Started: 2026-09-16
+
+### Work
+
+- Sort AI practice units Phần I → II → III after random pick
+- Label I.n / II.na–d / III.n so MCQ and short answer no longer both show as "1"
+- Progress bar uses one chip per câu (II.1 instead of II.1a–d); a T/F câu is done only when all 4 ý are answered
+- Tests: `orderBySection_putsPartOneThenTwoThenThree`, `partOneItemLabel`/`partThreeItemLabel`, exam-steps nav one chip per group
+- Browser: generate 5 opened I.1, II.1, II.2, III.1, III.2 with “Đã làm 0 / 5”; II.1 still has ý a–d
+
+### User prompts
+
+1. > sao cái này khi làm AI practice nó hiện lung tung thế
+
+### Skills used
+
+- identity
+- project-todo
+- git-auto-commit-push
+
+### Rules used
+
+- project-todo.mdc
+- identity.mdc
+- karpathy-guidelines.mdc
+- agent-auto-git.mdc
+
+### Outcome
+
+- All Phase 37 tasks marked `[x]`
+- Frontend tests passed (21); `BankPracticePickerTest` and `PaperGenerateRulesTest` passed
+- Planned commit: `fix(practice): order parts and collapse true/false nav`

@@ -2,6 +2,7 @@ package com.aiexam.learning.paper.domain;
 
 import java.util.ArrayList;
 import java.util.Collections;
+import java.util.Comparator;
 import java.util.List;
 import java.util.Random;
 import java.util.UUID;
@@ -50,5 +51,18 @@ public final class BankPracticePicker {
         List<Unit> shuffled = new ArrayList<>(pool);
         Collections.shuffle(shuffled, random);
         return List.copyOf(shuffled.subList(0, count));
+    }
+
+    public static List<Unit> orderBySection(List<Unit> units) {
+        List<Unit> ordered = new ArrayList<>(units);
+        ordered.sort(Comparator.comparingInt(BankPracticePicker::sectionOrder));
+        return List.copyOf(ordered);
+    }
+
+    static int sectionOrder(Unit unit) {
+        return switch (unit) {
+            case Single single -> single.section().ordinal();
+            case TrueFalseGroup ignored -> PaperSection.PART_II.ordinal();
+        };
     }
 }

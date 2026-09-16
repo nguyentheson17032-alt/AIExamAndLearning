@@ -59,4 +59,23 @@ class BankPracticePickerTest {
                 .isInstanceOf(IllegalArgumentException.class)
                 .hasMessageContaining("4");
     }
+
+    @Test
+    void orderBySection_putsPartOneThenTwoThenThree() {
+        UUID mcq = UUID.fromString("11111111-1111-1111-1111-111111111111");
+        UUID shortAnswer = UUID.fromString("99999999-9999-9999-9999-999999999999");
+        UUID a = UUID.fromString("aaaaaaaa-aaaa-aaaa-aaaa-aaaaaaaaaaaa");
+        UUID b = UUID.fromString("bbbbbbbb-bbbb-bbbb-bbbb-bbbbbbbbbbbb");
+        UUID c = UUID.fromString("cccccccc-cccc-cccc-cccc-cccccccccccc");
+        UUID d = UUID.fromString("dddddddd-dddd-dddd-dddd-dddddddddddd");
+        List<BankPracticePicker.Unit> mixed = List.of(
+                new BankPracticePicker.Single(shortAnswer, PaperSection.PART_III),
+                new BankPracticePicker.TrueFalseGroup(List.of(a, b, c, d)),
+                new BankPracticePicker.Single(mcq, PaperSection.PART_I)
+        );
+        var ordered = BankPracticePicker.orderBySection(mixed);
+        assertThat(ordered.get(0)).isEqualTo(new BankPracticePicker.Single(mcq, PaperSection.PART_I));
+        assertThat(ordered.get(1)).isInstanceOf(BankPracticePicker.TrueFalseGroup.class);
+        assertThat(ordered.get(2)).isEqualTo(new BankPracticePicker.Single(shortAnswer, PaperSection.PART_III));
+    }
 }

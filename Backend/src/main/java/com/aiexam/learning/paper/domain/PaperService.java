@@ -313,13 +313,14 @@ public class PaperService {
         int partOne = 1;
         int partTwo = 1;
         int partThree = 1;
-        for (BankPracticePicker.Unit unit : units) {
+        for (BankPracticePicker.Unit unit : BankPracticePicker.orderBySection(units)) {
             switch (unit) {
                 case BankPracticePicker.Single single -> {
                     PaperSection section = single.section();
-                    String label = section == PaperSection.PART_I
-                            ? String.valueOf(partOne++)
-                            : String.valueOf(partThree++);
+                    boolean partOneItem = section == PaperSection.PART_I;
+                    String label = partOneItem
+                            ? PaperGenerateRules.partOneItemLabel(partOne++)
+                            : PaperGenerateRules.partThreeItemLabel(partThree++);
                     paper.addQuestion(
                             questions.get(single.questionId()),
                             order++,
@@ -327,7 +328,7 @@ public class PaperService {
                             section,
                             PaperGenerateRules.sectionTitle(section),
                             label,
-                            null
+                            label
                     );
                 }
                 case BankPracticePicker.TrueFalseGroup group -> {

@@ -240,3 +240,10 @@
 - [x] Keep TRUE_FALSE practice items in complete 4-ý groups
 - [x] Show the correct choice on solutions, not a mismatched answerKey
 - [x] Add tests for bank units and complete TRUE_FALSE groups
+
+## Phase 37: Practice Paper Nav Order
+
+- [x] Order AI practice items by Phần I, then II, then III
+- [x] Label items I.n, II.na–d, and III.n without duplicate numbers
+- [x] Show one progress chip per câu, not one per ý
+- [x] Add tests for section order and nav labels
