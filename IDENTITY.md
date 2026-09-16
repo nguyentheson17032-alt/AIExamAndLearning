@@ -1101,3 +1101,43 @@ Log of user–AI collaboration per `todo.md` phase: work done, user prompts, ski
 - Frontend tests passed (17); `AiPracticeRulesTest` and `HeuristicExamAiClientTest` passed
 - Browser: generate with count 2 opened `/attempts/...` with 4 ý a–d per câu
 - Planned commit: `feat(ai): start practice paper and group true/false items`
+
+## Phase 36: Bank Practice and True/False Grading
+
+**Status:** completed
+
+Started: 2026-09-16
+
+### Work
+
+- AI practice papers now pick random published bank units (MCQ, complete TRUE_FALSE groups of 4 ý, short answer) instead of `generateSimilar` clones
+- Incomplete TRUE_FALSE groups are dropped; each included đúng/sai câu is labeled II.na–d
+- Solutions show the choice marked `correct`, so a Sai ý no longer displays “Đáp án: Đúng”
+- Heuristic similar generation no longer defaults empty TRUE_FALSE choices to Đúng
+- Tests: `BankPracticePickerTest`, `AiExamServiceTest.generatePracticePaper_picksPublishedBankQuestions`, `correct-answer.test.ts`
+- Browser: `/papers/ai` count 8 started an attempt with II.1a–d, II.2a–d, II.3a–d; API grading: selecting Đúng on a Sai ý scored 0.00
+
+### User prompts
+
+1. > sao chọn sai đáp án vẫn cho đúng và được cộng điểm
+   > với cả AI practice paper generate ra các câu hỏi bất kỳ trong kho đề và nếu Generate ra câu hỏi đúng sai thì phải đủ 4 ý chọn đúng sai
+
+### Skills used
+
+- identity
+- project-todo
+- git-auto-commit-push
+
+### Rules used
+
+- project-todo.mdc
+- identity.mdc
+- karpathy-guidelines.mdc
+- agent-auto-git.mdc
+
+### Outcome
+
+- All Phase 36 tasks marked `[x]`
+- Frontend tests passed (20); backend picker/AI/heuristic tests passed
+- Choosing Đúng when the bank key is Sai is marked incorrect and gets 0 points
+- Planned commit: `fix(practice): grade bank true/false groups from kho đề`

@@ -85,11 +85,10 @@ public class HeuristicExamAiClient implements ExamAiClient {
         for (int i = 1; i <= count; i++) {
             List<GeneratedChoice> choices = new ArrayList<>();
             if (question.getType() == QuestionType.TRUE_FALSE) {
-                boolean correctIsTrue = question.getChoices().stream()
-                        .anyMatch(choice -> choice.isCorrect() && isTrueChoice(choice));
-                if (question.getChoices().isEmpty()) {
-                    correctIsTrue = true;
-                }
+                boolean correctIsTrue = question.getChoices().isEmpty()
+                        ? isTrueAnswerKey(question.getAnswerKey())
+                        : question.getChoices().stream()
+                                .anyMatch(choice -> choice.isCorrect() && isTrueChoice(choice));
                 choices.add(new GeneratedChoice("Đ", "Đúng", correctIsTrue));
                 choices.add(new GeneratedChoice("S", "Sai", !correctIsTrue));
             } else {
@@ -152,5 +151,10 @@ public class HeuristicExamAiClient implements ExamAiClient {
         String label = choice.getLabel() == null ? "" : choice.getLabel().trim();
         String content = choice.getContent() == null ? "" : choice.getContent().toLowerCase(Locale.ROOT);
         return label.equalsIgnoreCase("Đ") || content.contains("đúng") || content.contains("true");
+    }
+
+    private boolean isTrueAnswerKey(String answerKey) {
+        String value = answerKey == null ? "" : answerKey.toLowerCase(Locale.ROOT).trim();
+        return value.contains("đúng") || value.equals("đ") || value.equals("true") || value.equals("t");
     }
 }

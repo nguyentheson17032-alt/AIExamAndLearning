@@ -234,9 +234,9 @@
 - [x] Keep groupKey so take-exam shows 4 Đúng/Sai
 - [x] Add tests for grouping 4 items
 
-## Phase 35: AI Practice Paper Flow
+## Phase 36: Bank Practice and True/False Grading
 
-- [x] Cap AI practice question count below 100 and set duration to count × 2.5
-- [x] Generate TRUE_FALSE AI items as groups of 4 ý Đúng/Sai
-- [x] Start an attempt and open take-exam after AI practice paper
-- [x] Add tests for AI practice duration and TRUE_FALSE grouping
+- [x] Pick AI practice questions at random from the published bank
+- [x] Keep TRUE_FALSE practice items in complete 4-ý groups
+- [x] Show the correct choice on solutions, not a mismatched answerKey
+- [x] Add tests for bank units and complete TRUE_FALSE groups

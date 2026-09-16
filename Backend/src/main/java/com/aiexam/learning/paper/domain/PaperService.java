@@ -28,6 +28,7 @@ import java.util.LinkedHashMap;
 import java.util.LinkedHashSet;
 import java.util.List;
 import java.util.Map;
+import java.util.Random;
 import java.util.UUID;
 
 @Service
@@ -88,6 +89,45 @@ public class PaperService {
         } else {
             addShuffledQuestions(paper, request.subjectId(), section, min, max, request.questionCount(), sectionTitle);
         }
+        return PaperResponse.from(paperRepository.save(paper), true);
+    }
+
+    @Transactional
+    public PaperResponse generateBankPractice(
+            UUID authorId,
+            UUID subjectId,
+            String title,
+            String description,
+            int questionCount,
+            int duration,
+            int preferredMin,
+            int preferredMax
+    ) {
+        if (preferredMin > preferredMax) {
+            throw new BusinessRuleException("INVALID_ELO_RANGE", "targetEloMin must be <= targetEloMax");
+        }
+        User author = user(authorId);
+        Subject subject = catalogService.getSubject(subjectId);
+        List<BankPracticePicker.Unit> picked = pickBankUnits(subjectId, questionCount, preferredMin, preferredMax);
+        if (picked.isEmpty()) {
+            throw new BusinessRuleException(
+                    "NO_PRACTICE_QUESTIONS",
+                    "Not enough published bank questions. True/false items need a complete group of 4 ý a–d."
+            );
+        }
+        Paper paper = Paper.create(
+                author,
+                subject,
+                title,
+                description,
+                PaperKind.PRACTICE,
+                PaperSource.AI_GENERATED,
+                duration,
+                preferredMin,
+                preferredMax,
+                ContentStatus.PUBLISHED
+        );
+        addBankUnits(paper, picked);
         return PaperResponse.from(paperRepository.save(paper), true);
     }
 
@@ -216,6 +256,99 @@ public class PaperService {
                 ? paperRepository.findBySubjectIdAndStatus(subjectId, filter, pageable)
                 : paperRepository.findByStatus(filter, pageable);
         return PageResponse.from(page.map(paper -> PaperResponse.from(paper, false)));
+    }
+
+    private List<BankPracticePicker.Unit> pickBankUnits(UUID subjectId, int questionCount, int preferredMin, int preferredMax) {
+        List<BankPracticePicker.Unit> picked = BankPracticePicker.pick(
+                bankUnitPool(subjectId, preferredMin, preferredMax),
+                questionCount,
+                new Random()
+        );
+        if (!picked.isEmpty() || (preferredMin == 100 && preferredMax == 3000)) {
+            return picked;
+        }
+        return BankPracticePicker.pick(bankUnitPool(subjectId, 100, 3000), questionCount, new Random());
+    }
+
+    private List<BankPracticePicker.Unit> bankUnitPool(UUID subjectId, int min, int max) {
+        List<UUID> multipleChoice = questionRepository.findPublishedInEloRangeAndType(
+                        subjectId, ContentStatus.PUBLISHED, QuestionType.MULTIPLE_CHOICE, min, max)
+                .stream()
+                .map(Question::getId)
+                .toList();
+        List<UUID> shortAnswer = questionRepository.findPublishedInEloRangeAndType(
+                        subjectId, ContentStatus.PUBLISHED, QuestionType.SHORT_ANSWER, min, max)
+                .stream()
+                .map(Question::getId)
+                .toList();
+        List<PaperQuestion> rows = paperQuestionRepository.findGroupedSectionItems(
+                subjectId, PaperSection.PART_II, ContentStatus.PUBLISHED, min, max);
+        List<List<UUID>> trueFalseGroups = PaperGenerateRules.completePartTwoGroups(
+                rows.stream()
+                        .map(row -> new PaperGenerateRules.SourceItem(
+                                row.getPaper().getId(),
+                                row.getGroupKey(),
+                                row.getQuestion().getId(),
+                                row.getSortOrder()))
+                        .toList()
+        ).stream()
+                .map(group -> group.stream().map(PaperGenerateRules.SourceItem::questionId).toList())
+                .toList();
+        return BankPracticePicker.pool(multipleChoice, shortAnswer, trueFalseGroups);
+    }
+
+    private void addBankUnits(Paper paper, List<BankPracticePicker.Unit> units) {
+        LinkedHashSet<UUID> ids = new LinkedHashSet<>();
+        for (BankPracticePicker.Unit unit : units) {
+            switch (unit) {
+                case BankPracticePicker.Single single -> ids.add(single.questionId());
+                case BankPracticePicker.TrueFalseGroup group -> ids.addAll(group.questionIds());
+            }
+        }
+        Map<UUID, Question> questions = new LinkedHashMap<>();
+        for (UUID id : ids) {
+            questions.put(id, questionService.getQuestion(id));
+        }
+        int order = 1;
+        int partOne = 1;
+        int partTwo = 1;
+        int partThree = 1;
+        for (BankPracticePicker.Unit unit : units) {
+            switch (unit) {
+                case BankPracticePicker.Single single -> {
+                    PaperSection section = single.section();
+                    String label = section == PaperSection.PART_I
+                            ? String.valueOf(partOne++)
+                            : String.valueOf(partThree++);
+                    paper.addQuestion(
+                            questions.get(single.questionId()),
+                            order++,
+                            PaperGenerateRules.points(section),
+                            section,
+                            PaperGenerateRules.sectionTitle(section),
+                            label,
+                            null
+                    );
+                }
+                case BankPracticePicker.TrueFalseGroup group -> {
+                    String groupKey = PaperGenerateRules.partTwoGroupKey(partTwo);
+                    int index = 0;
+                    for (UUID questionId : group.questionIds()) {
+                        paper.addQuestion(
+                                questions.get(questionId),
+                                order++,
+                                PaperGenerateRules.points(PaperSection.PART_II),
+                                PaperSection.PART_II,
+                                PaperGenerateRules.sectionTitle(PaperSection.PART_II),
+                                PaperGenerateRules.partTwoItemLabel(partTwo, index),
+                                groupKey
+                        );
+                        index++;
+                    }
+                    partTwo++;
+                }
+            }
+        }
     }
 
     private void addQuestions(Paper paper, List<PaperQuestionRequest> requests) {

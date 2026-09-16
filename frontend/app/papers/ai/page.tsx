@@ -9,7 +9,10 @@ export default async function AiPracticePaperPage() {
   const subjects = await backendFetch<PageResponse<Subject>>("/api/v1/subjects?size=100");
   return (
     <>
-      <PageHeader title="AI practice paper" description="Generate a set slightly above learner Elo." />
+      <PageHeader
+        title="AI practice paper"
+        description="Lấy câu hỏi bất kỳ trong kho đề. Câu đúng/sai gồm đủ 4 ý a–d."
+      />
       <AiPracticeForm subjects={subjects.content} />
     </>
   );

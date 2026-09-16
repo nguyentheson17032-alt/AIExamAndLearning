@@ -52,6 +52,24 @@ class HeuristicExamAiClientTest {
                 .containsExactly("Đ", "S");
     }
 
+    @Test
+    void generateSimilar_trueFalseUsesAnswerKeyWhenChoicesMissing() {
+        Question question = sample(QuestionType.TRUE_FALSE, "2 + 2 = 5");
+        var generated = client.generateSimilar(question, 1);
+        assertThat(generated.getFirst().choices()).extracting(ExamAiClient.GeneratedChoice::correct)
+                .containsExactly(false, true);
+    }
+
+    @Test
+    void generateSimilar_trueFalseKeepsSaiAsCorrectChoice() {
+        Question question = sample(QuestionType.TRUE_FALSE, "2 + 2 = 5");
+        question.addChoice("Đ", "Đúng", false, 1);
+        question.addChoice("S", "Sai", true, 2);
+        var generated = client.generateSimilar(question, 1);
+        assertThat(generated.getFirst().choices()).extracting(ExamAiClient.GeneratedChoice::correct)
+                .containsExactly(false, true);
+    }
+
     private Question sample(QuestionType type, String stem) {
         User author = User.register("teacher@exam.local", "hash", "Teacher", UserRole.TEACHER, 1200);
         Subject subject = Subject.create("MATH", "Toán", null);

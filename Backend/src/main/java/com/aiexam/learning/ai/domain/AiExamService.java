@@ -8,14 +8,8 @@ import com.aiexam.learning.attempt.domain.AttemptService;
 import com.aiexam.learning.common.exception.ResourceNotFoundException;
 import com.aiexam.learning.elo.domain.EloReason;
 import com.aiexam.learning.elo.domain.EloService;
-import com.aiexam.learning.paper.api.PaperCreateRequest;
-import com.aiexam.learning.paper.api.PaperQuestionRequest;
 import com.aiexam.learning.paper.api.PaperResponse;
-import com.aiexam.learning.paper.domain.PaperGenerateRules;
-import com.aiexam.learning.paper.domain.PaperKind;
-import com.aiexam.learning.paper.domain.PaperSection;
 import com.aiexam.learning.paper.domain.PaperService;
-import com.aiexam.learning.paper.domain.PaperSource;
 import com.aiexam.learning.question.api.ChoiceRequest;
 import com.aiexam.learning.question.api.QuestionCreateRequest;
 import com.aiexam.learning.question.api.QuestionResponse;
@@ -26,7 +20,6 @@ import com.aiexam.learning.question.domain.QuestionService;
 import com.aiexam.learning.question.domain.QuestionSource;
 import com.aiexam.learning.question.domain.QuestionType;
 import com.aiexam.learning.question.infrastructure.QuestionClassificationRepository;
-import com.aiexam.learning.question.infrastructure.QuestionRepository;
 import com.aiexam.learning.user.api.UserProfileResponse;
 import com.aiexam.learning.user.domain.User;
 import com.aiexam.learning.user.infrastructure.UserRepository;
@@ -36,7 +29,6 @@ import lombok.RequiredArgsConstructor;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
-import java.math.BigDecimal;
 import java.util.ArrayList;
 import java.util.List;
 import java.util.Locale;
@@ -48,7 +40,6 @@ public class AiExamService {
 
     private final ExamAiClient examAiClient;
     private final QuestionService questionService;
-    private final QuestionRepository questionRepository;
     private final QuestionClassificationRepository classificationRepository;
     private final PaperService paperService;
     private final AttemptService attemptService;
@@ -126,35 +117,16 @@ public class AiExamService {
         AiGenerationJob job = jobRepository.save(
                 AiGenerationJob.start(user, AiJobType.PRACTICE_PAPER, writeJson(request)));
         try {
-            int min = Math.max(100, user.getEloRating() - 80);
-            int max = user.getEloRating() + 160;
-            List<Question> seeds = questionRepository.findPublishedInEloRange(
-                    request.subjectId(), ContentStatus.PUBLISHED, min, max);
-            if (seeds.isEmpty()) {
-                seeds = questionRepository.findPublishedInEloRange(
-                        request.subjectId(), ContentStatus.PUBLISHED, 100, 3000);
-            }
-            if (seeds.isEmpty()) {
-                throw new com.aiexam.learning.common.exception.BusinessRuleException(
-                        "NO_PRACTICE_QUESTIONS", "No questions available to seed AI practice papers");
-            }
-            Question seed = seeds.stream()
-                    .filter(question -> question.getType() == QuestionType.TRUE_FALSE)
-                    .findFirst()
-                    .orElse(seeds.getFirst());
-            List<PaperQuestionRequest> items = paperItems(userId, seed, count);
-            PaperResponse paper = paperService.create(userId, new PaperCreateRequest(
+            PaperResponse paper = paperService.generateBankPractice(
+                    userId,
                     request.subjectId(),
                     "AI luyện thi Elo " + user.getEloRating(),
-                    "Generated practice set aimed just above current rank " + user.getRankCode(),
-                    PaperKind.PRACTICE,
-                    PaperSource.AI_GENERATED,
+                    "Random published bank questions for rank " + user.getRankCode(),
+                    count,
                     duration,
-                    min,
-                    max,
-                    ContentStatus.PUBLISHED,
-                    items
-            ));
+                    100,
+                    3000
+            );
             job.complete(paper.id().toString());
             return paper;
         } catch (RuntimeException ex) {
@@ -203,40 +175,6 @@ public class AiExamService {
     public AiJobResponse getJob(UUID id) {
         return AiJobResponse.from(jobRepository.findById(id)
                 .orElseThrow(() -> new ResourceNotFoundException("AI_JOB_NOT_FOUND", "AI job not found: " + id)));
-    }
-
-    private List<PaperQuestionRequest> paperItems(UUID userId, Question seed, int questionCount) {
-        if (seed.getType() == QuestionType.TRUE_FALSE) {
-            int needed = AiPracticeRules.generatedQuestionCount(QuestionType.TRUE_FALSE, questionCount);
-            List<QuestionResponse> similar = generateSimilar(userId, seed.getId(), needed);
-            List<AiPracticeRules.TrueFalseSlot> slots = AiPracticeRules.trueFalseSlots(questionCount);
-            List<PaperQuestionRequest> items = new ArrayList<>();
-            int limit = Math.min(similar.size(), slots.size());
-            for (int i = 0; i < limit; i++) {
-                AiPracticeRules.TrueFalseSlot slot = slots.get(i);
-                items.add(new PaperQuestionRequest(
-                        similar.get(i).id(),
-                        PaperGenerateRules.points(PaperSection.PART_II),
-                        PaperSection.PART_II,
-                        PaperGenerateRules.sectionTitle(PaperSection.PART_II),
-                        slot.itemLabel(),
-                        slot.groupKey()
-                ));
-            }
-            if (items.size() < PaperGenerateRules.PART_II_GROUP_SIZE) {
-                throw new com.aiexam.learning.common.exception.BusinessRuleException(
-                        "TRUE_FALSE_GROUP_INCOMPLETE",
-                        "AI true/false questions must have 4 statements (ý a–d)");
-            }
-            int complete = items.size() - (items.size() % PaperGenerateRules.PART_II_GROUP_SIZE);
-            return List.copyOf(items.subList(0, complete));
-        }
-        List<QuestionResponse> similar = generateSimilar(userId, seed.getId(), Math.max(1, questionCount - 1));
-        List<PaperQuestionRequest> items = new ArrayList<>();
-        items.add(new PaperQuestionRequest(seed.getId(), BigDecimal.ONE));
-        similar.stream().limit(questionCount - 1L)
-                .forEach(question -> items.add(new PaperQuestionRequest(question.id(), BigDecimal.ONE)));
-        return items;
     }
 
     private List<ChoiceRequest> choicesFor(ExamAiClient.GeneratedQuestion item) {

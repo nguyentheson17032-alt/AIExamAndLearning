@@ -1,19 +1,9 @@
 import { PageHeader } from "@/components/page-header";
 import { StemText, promptStem, storedImageSrc } from "@/components/stem-text";
+import { correctAnswerText, submittedWork } from "@/lib/correct-answer";
 import { loadAttemptSolutions } from "@/lib/load-attempt";
 import { requireUser } from "@/lib/guards";
-import type { Choice } from "@/lib/types";
 import Link from "next/link";
-
-function submittedWork(selected: Choice | undefined, textAnswer: string | null | undefined): string {
-  if (selected) {
-    if (selected.content && !selected.content.includes("[[img:")) {
-      return `${selected.label}. ${selected.content}`;
-    }
-    return selected.label;
-  }
-  return textAnswer?.trim() || "Không trả lời";
-}
 
 export default async function AttemptSolutionsPage({ params }: { params: Promise<{ id: string }> }) {
   await requireUser();
@@ -63,7 +53,7 @@ export default async function AttemptSolutionsPage({ params }: { params: Promise
               ) : null}
               <p className="mt-3 text-sm">Bài làm: {submittedWork(selected, answer?.textAnswer)}</p>
               <p className="mt-1 text-sm">
-                Đáp án: {item.question.answerKey ?? "—"}
+                Đáp án: {correctAnswerText(item.question)}
                 {answer?.score != null ? ` · ${answer.score} điểm` : ""}
                 {answer?.correct == null ? "" : answer.correct ? " · Đúng" : " · Sai"}
               </p>

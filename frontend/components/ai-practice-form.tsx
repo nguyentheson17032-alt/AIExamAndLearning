@@ -36,7 +36,9 @@ export function AiPracticeForm({ subjects }: { subjects: Subject[] }) {
           onChange={(event) => setQuestionCount(Number(event.target.value))}
           className="mt-1 w-full rounded-md border border-line bg-card px-3 py-2"
         />
-        <span className="mt-1 block text-xs text-muted">Tối đa 99. Đúng/sai: mỗi câu gồm 4 ý a–d.</span>
+        <span className="mt-1 block text-xs text-muted">
+          Lấy ngẫu nhiên từ kho đề. Tối đa 99. Câu đúng/sai luôn đủ 4 ý a–d.
+        </span>
       </label>
       <label className="block text-sm">
         <span className="font-medium">Duration (minutes)</span>
