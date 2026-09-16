@@ -7,7 +7,7 @@
     "build": "next build",
     "start": "next start",
     "lint": "eslint",
-    "test": "tsx --test lib/problem.test.ts lib/roles.test.ts lib/exam-steps.test.ts lib/session.test.ts lib/format-datetime.test.ts lib/stem-text.test.ts lib/paper-generate.test.ts"
+    "test": "tsx --test lib/problem.test.ts lib/roles.test.ts lib/exam-steps.test.ts lib/session.test.ts lib/format-datetime.test.ts lib/stem-text.test.ts lib/paper-generate.test.ts lib/ai-practice.test.ts"
   },
   "dependencies": {
     "next": "15.5.9",

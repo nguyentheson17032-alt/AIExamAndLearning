@@ -1062,3 +1062,42 @@ Log of user–AI collaboration per `todo.md` phase: work done, user prompts, ski
 - All Phase 34 tasks marked `[x]`
 - Take-exam for a new Phần II paper shows 4 ý a–d per câu
 - Planned commit: `feat(papers): generate Part II as 4-item groups`
+
+## Phase 35: AI Practice Paper Flow
+
+**Status:** completed
+
+### Work
+
+- AI practice form caps question count at 99 and sets duration to count × 2.5 (read-only)
+- Backend `AiPracticeRules` computes the same duration and, for TRUE_FALSE seeds, generates 4 ý a–d per câu with `groupKey` and Đúng/Sai choices
+- Submitting "AI practice paper" creates the paper, starts an attempt, and redirects to take-exam
+- Browser: count 2 → duration 5; attempt shows Câu 1/2 with II.1a–d Đúng/Sai
+
+### User prompts
+
+1. > http://localhost:3000/papers/ai
+   > - Question count: điền dưới 100
+   > - Duration (minutes): = question count * 2.5
+   > - Generate ra câu hỏi đúng sai thì phải đủ 4 ý chọn đúng sai
+   > - Bấm "AI practice paper" thì phải vào làm đề luôn
+
+### Skills used
+
+- identity
+- project-todo
+- git-auto-commit-push
+
+### Rules used
+
+- project-todo.mdc
+- identity.mdc
+- karpathy-guidelines.mdc
+- agent-auto-git.mdc
+
+### Outcome
+
+- All Phase 35 tasks marked `[x]`
+- Frontend tests passed (17); `AiPracticeRulesTest` and `HeuristicExamAiClientTest` passed
+- Browser: generate with count 2 opened `/attempts/...` with 4 ý a–d per câu
+- Planned commit: `feat(ai): start practice paper and group true/false items`

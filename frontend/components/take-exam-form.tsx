@@ -174,10 +174,11 @@ function QuestionPrompt({
   const written = isWrittenQuestion(question.type);
   const snapshot = storedImageSrc(question.stemImageId, question.stem);
   const letterOnly = Boolean(snapshot && question.type === "MULTIPLE_CHOICE");
+  const showThisStem = showStem || !snapshot;
   return (
     <div className="mt-4">
       <p className="text-xs text-muted">{item.itemLabel ?? question.type}</p>
-      {showStem ? (
+      {showThisStem ? (
         <p className="mt-2">
           <StemText text={promptStem(question.stem, question.choices.length > 0)} imageId={question.stemImageId} />
         </p>

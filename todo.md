@@ -233,3 +233,10 @@
 - [x] Pick complete Phần II groups of 4 ý a–d when generating
 - [x] Keep groupKey so take-exam shows 4 Đúng/Sai
 - [x] Add tests for grouping 4 items
+
+## Phase 35: AI Practice Paper Flow
+
+- [x] Cap AI practice question count below 100 and set duration to count × 2.5
+- [x] Generate TRUE_FALSE AI items as groups of 4 ý Đúng/Sai
+- [x] Start an attempt and open take-exam after AI practice paper
+- [x] Add tests for AI practice duration and TRUE_FALSE grouping

@@ -1,9 +1,10 @@
 "use server";
 
 import { backendFetch, errorMessage } from "@/lib/backend";
-import { requireTeacher, requireUser } from "@/lib/guards";
+import { requireTeacher } from "@/lib/guards";
+import { aiPracticeDurationMinutes } from "@/lib/ai-practice";
 import { getSessionUser, persistSessionUser } from "@/lib/session";
-import type { Paper, Question, UserProfile } from "@/lib/types";
+import type { Attempt, Paper, Question, UserProfile } from "@/lib/types";
 import { revalidatePath } from "next/cache";
 import { redirect } from "next/navigation";
 
@@ -39,10 +40,11 @@ export async function generateAiPracticeAction(
   formData: FormData,
 ): Promise<AiFormState> {
   await requireTeacher();
+  const questionCount = Number(formData.get("questionCount") ?? 5);
   const payload = {
     subjectId: String(formData.get("subjectId") ?? ""),
-    questionCount: Number(formData.get("questionCount") ?? 5),
-    durationMinutes: Number(formData.get("durationMinutes") ?? 25),
+    questionCount,
+    durationMinutes: aiPracticeDurationMinutes(questionCount),
   };
   let paper: Paper;
   try {
@@ -54,7 +56,15 @@ export async function generateAiPracticeAction(
     return { error: errorMessage(error, "AI practice paper failed") };
   }
   revalidatePath("/papers");
-  redirect(`/papers/${paper.id}`);
+  let attempt: Attempt;
+  try {
+    attempt = await backendFetch<Attempt>(`/api/v1/papers/${paper.id}/attempts`, {
+      method: "POST",
+    });
+  } catch (error) {
+    return { error: errorMessage(error, "Không bắt đầu được đề thi") };
+  }
+  redirect(`/attempts/${attempt.id}`);
 }
 
 export async function adjustEloAction(attemptId: string): Promise<AiFormState> {

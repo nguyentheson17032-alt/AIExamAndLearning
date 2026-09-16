@@ -43,6 +43,15 @@ class HeuristicExamAiClientTest {
         assertThat(generated.getFirst().stem()).startsWith("[Biến thể 1]");
     }
 
+    @Test
+    void generateSimilar_trueFalseHasDungSaiChoices() {
+        Question question = sample(QuestionType.TRUE_FALSE, "2 + 2 = 4");
+        var generated = client.generateSimilar(question, 4);
+        assertThat(generated).hasSize(4);
+        assertThat(generated.getFirst().choices()).extracting(ExamAiClient.GeneratedChoice::label)
+                .containsExactly("Đ", "S");
+    }
+
     private Question sample(QuestionType type, String stem) {
         User author = User.register("teacher@exam.local", "hash", "Teacher", UserRole.TEACHER, 1200);
         Subject subject = Subject.create("MATH", "Toán", null);

@@ -8,6 +8,6 @@ import java.util.UUID;
 
 public record PracticeGenerateRequest(
         @NotNull UUID subjectId,
-        @Min(1) @Max(30) Integer questionCount,
-        @Min(10) @Max(180) Integer durationMinutes
+        @Min(1) @Max(99) Integer questionCount,
+        @Min(1) @Max(300) Integer durationMinutes
 ) {}

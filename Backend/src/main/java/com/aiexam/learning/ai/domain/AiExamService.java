@@ -11,7 +11,9 @@ import com.aiexam.learning.elo.domain.EloService;
 import com.aiexam.learning.paper.api.PaperCreateRequest;
 import com.aiexam.learning.paper.api.PaperQuestionRequest;
 import com.aiexam.learning.paper.api.PaperResponse;
+import com.aiexam.learning.paper.domain.PaperGenerateRules;
 import com.aiexam.learning.paper.domain.PaperKind;
+import com.aiexam.learning.paper.domain.PaperSection;
 import com.aiexam.learning.paper.domain.PaperService;
 import com.aiexam.learning.paper.domain.PaperSource;
 import com.aiexam.learning.question.api.ChoiceRequest;
@@ -22,6 +24,7 @@ import com.aiexam.learning.question.domain.Question;
 import com.aiexam.learning.question.domain.QuestionClassification;
 import com.aiexam.learning.question.domain.QuestionService;
 import com.aiexam.learning.question.domain.QuestionSource;
+import com.aiexam.learning.question.domain.QuestionType;
 import com.aiexam.learning.question.infrastructure.QuestionClassificationRepository;
 import com.aiexam.learning.question.infrastructure.QuestionRepository;
 import com.aiexam.learning.user.api.UserProfileResponse;
@@ -36,6 +39,7 @@ import org.springframework.transaction.annotation.Transactional;
 import java.math.BigDecimal;
 import java.util.ArrayList;
 import java.util.List;
+import java.util.Locale;
 import java.util.UUID;
 
 @Service
@@ -101,9 +105,7 @@ public class AiExamService {
                         item.bloomLevel(),
                         QuestionSource.AI_GENERATED,
                         ContentStatus.PUBLISHED,
-                        item.choices().stream()
-                                .map(choice -> new ChoiceRequest(choice.label(), choice.content(), choice.correct()))
-                                .toList()
+                        choicesFor(item)
                 );
                 Question persisted = questionService.saveGenerated(userId, request, source);
                 saved.add(QuestionResponse.from(persisted));
@@ -119,8 +121,8 @@ public class AiExamService {
     @Transactional
     public PaperResponse generatePracticePaper(UUID userId, PracticeGenerateRequest request) {
         User user = user(userId);
-        int count = request.questionCount() == null ? 8 : request.questionCount();
-        int duration = request.durationMinutes() == null ? 25 : request.durationMinutes();
+        int count = AiPracticeRules.clampQuestionCount(request.questionCount());
+        int duration = AiPracticeRules.durationMinutes(count);
         AiGenerationJob job = jobRepository.save(
                 AiGenerationJob.start(user, AiJobType.PRACTICE_PAPER, writeJson(request)));
         try {
@@ -136,12 +138,11 @@ public class AiExamService {
                 throw new com.aiexam.learning.common.exception.BusinessRuleException(
                         "NO_PRACTICE_QUESTIONS", "No questions available to seed AI practice papers");
             }
-            Question seed = seeds.getFirst();
-            List<QuestionResponse> similar = generateSimilar(userId, seed.getId(), Math.max(1, count - 1));
-            List<PaperQuestionRequest> items = new ArrayList<>();
-            items.add(new PaperQuestionRequest(seed.getId(), BigDecimal.ONE));
-            similar.stream().limit(count - 1L)
-                    .forEach(question -> items.add(new PaperQuestionRequest(question.id(), BigDecimal.ONE)));
+            Question seed = seeds.stream()
+                    .filter(question -> question.getType() == QuestionType.TRUE_FALSE)
+                    .findFirst()
+                    .orElse(seeds.getFirst());
+            List<PaperQuestionRequest> items = paperItems(userId, seed, count);
             PaperResponse paper = paperService.create(userId, new PaperCreateRequest(
                     request.subjectId(),
                     "AI luyện thi Elo " + user.getEloRating(),
@@ -202,6 +203,86 @@ public class AiExamService {
     public AiJobResponse getJob(UUID id) {
         return AiJobResponse.from(jobRepository.findById(id)
                 .orElseThrow(() -> new ResourceNotFoundException("AI_JOB_NOT_FOUND", "AI job not found: " + id)));
+    }
+
+    private List<PaperQuestionRequest> paperItems(UUID userId, Question seed, int questionCount) {
+        if (seed.getType() == QuestionType.TRUE_FALSE) {
+            int needed = AiPracticeRules.generatedQuestionCount(QuestionType.TRUE_FALSE, questionCount);
+            List<QuestionResponse> similar = generateSimilar(userId, seed.getId(), needed);
+            List<AiPracticeRules.TrueFalseSlot> slots = AiPracticeRules.trueFalseSlots(questionCount);
+            List<PaperQuestionRequest> items = new ArrayList<>();
+            int limit = Math.min(similar.size(), slots.size());
+            for (int i = 0; i < limit; i++) {
+                AiPracticeRules.TrueFalseSlot slot = slots.get(i);
+                items.add(new PaperQuestionRequest(
+                        similar.get(i).id(),
+                        PaperGenerateRules.points(PaperSection.PART_II),
+                        PaperSection.PART_II,
+                        PaperGenerateRules.sectionTitle(PaperSection.PART_II),
+                        slot.itemLabel(),
+                        slot.groupKey()
+                ));
+            }
+            if (items.size() < PaperGenerateRules.PART_II_GROUP_SIZE) {
+                throw new com.aiexam.learning.common.exception.BusinessRuleException(
+                        "TRUE_FALSE_GROUP_INCOMPLETE",
+                        "AI true/false questions must have 4 statements (ý a–d)");
+            }
+            int complete = items.size() - (items.size() % PaperGenerateRules.PART_II_GROUP_SIZE);
+            return List.copyOf(items.subList(0, complete));
+        }
+        List<QuestionResponse> similar = generateSimilar(userId, seed.getId(), Math.max(1, questionCount - 1));
+        List<PaperQuestionRequest> items = new ArrayList<>();
+        items.add(new PaperQuestionRequest(seed.getId(), BigDecimal.ONE));
+        similar.stream().limit(questionCount - 1L)
+                .forEach(question -> items.add(new PaperQuestionRequest(question.id(), BigDecimal.ONE)));
+        return items;
+    }
+
+    private List<ChoiceRequest> choicesFor(ExamAiClient.GeneratedQuestion item) {
+        if (item.type() == QuestionType.TRUE_FALSE) {
+            return trueFalseChoices(item);
+        }
+        List<ExamAiClient.GeneratedChoice> choices = item.choices() == null ? List.of() : item.choices();
+        return choices.stream()
+                .map(choice -> new ChoiceRequest(choice.label(), choice.content(), choice.correct()))
+                .toList();
+    }
+
+    private List<ChoiceRequest> trueFalseChoices(ExamAiClient.GeneratedQuestion item) {
+        boolean correctIsTrue = isTrueAnswer(item);
+        return List.of(
+                new ChoiceRequest("Đ", "Đúng", correctIsTrue),
+                new ChoiceRequest("S", "Sai", !correctIsTrue)
+        );
+    }
+
+    private boolean isTrueAnswer(ExamAiClient.GeneratedQuestion item) {
+        if (item.choices() != null) {
+            for (ExamAiClient.GeneratedChoice choice : item.choices()) {
+                if (choice.correct() && isTrueLabel(choice.label(), choice.content())) {
+                    return true;
+                }
+                if (choice.correct() && isFalseLabel(choice.label(), choice.content())) {
+                    return false;
+                }
+            }
+        }
+        return isTrueLabel(item.answerKey(), item.answerKey());
+    }
+
+    private boolean isTrueLabel(String label, String content) {
+        String value = ((label == null ? "" : label) + " " + (content == null ? "" : content))
+                .toLowerCase(Locale.ROOT)
+                .trim();
+        return value.contains("đúng") || value.equals("đ") || value.equals("true") || value.equals("t");
+    }
+
+    private boolean isFalseLabel(String label, String content) {
+        String value = ((label == null ? "" : label) + " " + (content == null ? "" : content))
+                .toLowerCase(Locale.ROOT)
+                .trim();
+        return value.contains("sai") || value.equals("s") || value.equals("false") || value.equals("f");
     }
 
     private User user(UUID userId) {

@@ -232,7 +232,15 @@ public class PaperService {
             if (question.getStatus() != ContentStatus.PUBLISHED) {
                 throw new BusinessRuleException("QUESTION_NOT_PUBLISHED", "Question is not published: " + question.getId());
             }
-            paper.addQuestion(question, order++, item.points());
+            paper.addQuestion(
+                    question,
+                    order++,
+                    item.points(),
+                    item.section(),
+                    item.sectionTitle(),
+                    item.itemLabel(),
+                    item.groupKey()
+            );
         }
     }
 

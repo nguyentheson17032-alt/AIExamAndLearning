@@ -84,8 +84,18 @@ public class HeuristicExamAiClient implements ExamAiClient {
         List<GeneratedQuestion> generated = new ArrayList<>();
         for (int i = 1; i <= count; i++) {
             List<GeneratedChoice> choices = new ArrayList<>();
-            for (QuestionChoice choice : question.getChoices()) {
-                choices.add(new GeneratedChoice(choice.getLabel(), choice.getContent(), choice.isCorrect()));
+            if (question.getType() == QuestionType.TRUE_FALSE) {
+                boolean correctIsTrue = question.getChoices().stream()
+                        .anyMatch(choice -> choice.isCorrect() && isTrueChoice(choice));
+                if (question.getChoices().isEmpty()) {
+                    correctIsTrue = true;
+                }
+                choices.add(new GeneratedChoice("Đ", "Đúng", correctIsTrue));
+                choices.add(new GeneratedChoice("S", "Sai", !correctIsTrue));
+            } else {
+                for (QuestionChoice choice : question.getChoices()) {
+                    choices.add(new GeneratedChoice(choice.getLabel(), choice.getContent(), choice.isCorrect()));
+                }
             }
             generated.add(new GeneratedQuestion(
                     question.getType(),
@@ -136,5 +146,11 @@ public class HeuristicExamAiClient implements ExamAiClient {
         }
         String decomposed = Normalizer.normalize(value, Normalizer.Form.NFD).replaceAll("\\p{M}", "");
         return decomposed.toLowerCase(Locale.ROOT).replaceAll("[^a-z0-9]+", "");
+    }
+
+    private boolean isTrueChoice(QuestionChoice choice) {
+        String label = choice.getLabel() == null ? "" : choice.getLabel().trim();
+        String content = choice.getContent() == null ? "" : choice.getContent().toLowerCase(Locale.ROOT);
+        return label.equalsIgnoreCase("Đ") || content.contains("đúng") || content.contains("true");
     }
 }
