@@ -1218,3 +1218,39 @@ Started: 2026-09-26
 - Frontend tests passed (24); `AttemptDeadlineTest` and `AttemptCompletenessTest` passed
 - Browser check skipped: frontend and backend were not running, and `JWT_SECRET` was unset
 - Planned commit: `feat(attempt): auto-submit when exam time runs out`
+
+## Phase 39: Clock Warning
+
+**Status:** completed
+
+Started: 2026-09-26
+
+### Work
+
+- Removed the full-screen red flash overlay
+- The countdown card pulses a light red only during the last minute
+- Checked on a live exam: the page stays normal and the clock shows “Còn dưới 1 phút” with a light red tint
+
+### User prompts
+
+1. > bỏ hiệu ứng nháy đỏ hết màn hình đi và chỉ nháy đỏ nhẹ ở đồng hồ thôi
+
+### Skills used
+
+- identity
+- project-todo
+- git-auto-commit-push
+
+### Rules used
+
+- project-todo.mdc
+- identity.mdc
+- karpathy-guidelines.mdc
+- agent-auto-git.mdc
+- react.mdc
+
+### Outcome
+
+- All Phase 39 tasks marked `[x]`
+- Browser: last-minute exam shows a light red clock only; no full-screen overlay
+- Planned commit: `fix(exam): flash only the countdown during the last minute`

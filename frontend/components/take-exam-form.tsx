@@ -117,10 +117,9 @@ export function TakeExamForm({
 
   return (
     <form onSubmit={onSubmit} className="space-y-6">
-      {warning ? <div className="exam-time-flash" aria-hidden /> : null}
       <div
         className={`sticky top-0 z-50 rounded-xl border px-4 py-3 ${
-          warning || expired ? "border-red-700 bg-red-600 text-white" : "border-line bg-card"
+          warning ? "exam-clock-warning" : expired ? "border-red-300 bg-red-50 text-red-800" : "border-line bg-card"
         }`}
         aria-live="polite"
       >

@@ -42,28 +42,27 @@ textarea {
   font: inherit;
 }
 
-.exam-time-flash {
-  position: fixed;
-  inset: 0;
-  z-index: 40;
-  pointer-events: none;
-  background-color: rgba(220, 38, 38, 0);
-  animation: exam-time-flash 0.8s ease-in-out infinite;
+.exam-clock-warning {
+  border-color: #fecaca;
+  animation: exam-clock-flash 1.2s ease-in-out infinite;
 }
 
-@keyframes exam-time-flash {
+@keyframes exam-clock-flash {
   0%,
   100% {
-    background-color: rgba(220, 38, 38, 0);
+    background-color: var(--card);
+    color: var(--foreground);
   }
   50% {
-    background-color: rgba(220, 38, 38, 0.45);
+    background-color: #fee2e2;
+    color: #991b1b;
   }
 }
 
 @media (prefers-reduced-motion: reduce) {
-  .exam-time-flash {
+  .exam-clock-warning {
     animation: none;
-    background-color: rgba(220, 38, 38, 0.28);
+    background-color: #fee2e2;
+    color: #991b1b;
   }
 }

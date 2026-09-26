@@ -255,3 +255,8 @@
 - [x] Auto-submit when time runs out, including unanswered questions
 - [x] Accept partial answers on the server only at the deadline
 - [x] Add tests for the countdown and the deadline rule
+
+## Phase 39: Clock Warning
+
+- [x] Pulse only the countdown card lightly in red during the last minute
+- [x] Remove the full-screen red flash
