@@ -5,7 +5,6 @@ import org.junit.jupiter.api.Test;
 
 import java.io.ByteArrayInputStream;
 import java.io.ByteArrayOutputStream;
-import java.math.BigDecimal;
 import java.util.List;
 
 import static org.assertj.core.api.Assertions.assertThat;
@@ -39,9 +38,8 @@ class DocxParagraphReaderTest {
     }
 
     @Test
-    void pointsSumToTen() {
-        assertThat(DocxExamImportService.pointsFor(3))
-                .containsExactly(new BigDecimal("3.33"), new BigDecimal("3.33"), new BigDecimal("3.34"));
+    void titleComesFromTheFileName() {
         assertThat(DocxExamImportService.titleOf("  ", "C:\\de\\de-ly.docx")).isEqualTo("de-ly");
+        assertThat(UploadedExamStore.filenameIn("[[img:e01-i-01.png]]")).isEqualTo("e01-i-01.png");
     }
 }

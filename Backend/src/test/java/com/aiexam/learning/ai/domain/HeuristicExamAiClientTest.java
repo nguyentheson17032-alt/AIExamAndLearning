@@ -36,6 +36,22 @@ class HeuristicExamAiClientTest {
     }
 
     @Test
+    void grade_shortAnswer_acceptsCommaAndDot() {
+        Question question = sample(QuestionType.SHORT_ANSWER, "Xác suất?");
+        question.updateContent(
+                question.getStem(),
+                "0,91",
+                question.getExplanation(),
+                question.getDifficulty(),
+                question.getEloRating(),
+                question.getBloomLevel(),
+                question.getStatus()
+        );
+        ExamAiClient.GradeResult result = client.grade(question, "0.91", new BigDecimal("0.50"));
+        assertThat(result.correct()).isTrue();
+    }
+
+    @Test
     void generateSimilar_prefixesVariantStem() {
         Question question = sample(QuestionType.MULTIPLE_CHOICE, "2 + 2 = ?");
         var generated = client.generateSimilar(question, 2);

@@ -13,7 +13,7 @@ export default async function UploadExamPage({ params }: { params: Promise<{ id:
     <>
       <PageHeader
         title="Tải đề"
-        description={`${subject.name} · File Word .docx. Mỗi đoạn “Câu 1”, “Câu 2”… thành một câu.`}
+        description={`${subject.name} · File Word đúng dạng đề tuyển sinh: Phần I, II, III, rồi HẾT và lời giải.`}
       />
       <p className="mb-6 text-sm">
         <Link href={`/subjects/${id}`} className="text-accent hover:underline">

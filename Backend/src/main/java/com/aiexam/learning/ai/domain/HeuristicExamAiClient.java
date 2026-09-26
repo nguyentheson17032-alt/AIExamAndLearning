@@ -54,7 +54,7 @@ public class HeuristicExamAiClient implements ExamAiClient {
             return new GradeResult(false, BigDecimal.ZERO.setScale(2), "Empty answer", MODEL);
         }
         if (question.getType() == QuestionType.SHORT_ANSWER) {
-            boolean match = normalize(answer).equals(normalize(question.getAnswerKey()));
+            boolean match = sameShortAnswer(answer, question.getAnswerKey());
             BigDecimal score = match ? maxPoints : BigDecimal.ZERO;
             return new GradeResult(match, score.setScale(2, RoundingMode.HALF_UP),
                     match ? "Matches the answer key" : "Does not match the answer key", MODEL);
@@ -137,6 +137,30 @@ public class HeuristicExamAiClient implements ExamAiClient {
             return Difficulty.INTERMEDIATE;
         }
         return Difficulty.BEGINNER;
+    }
+
+    private boolean sameShortAnswer(String answer, String key) {
+        if (normalize(answer).equals(normalize(key))) {
+            return true;
+        }
+        Double left = decimal(answer);
+        Double right = decimal(key);
+        return left != null && right != null && Math.abs(left - right) < 0.0001;
+    }
+
+    private Double decimal(String value) {
+        if (value == null) {
+            return null;
+        }
+        String token = value.trim().replace(" ", "").replace(",", ".");
+        if (!token.matches("-?\\d+(\\.\\d+)?")) {
+            return null;
+        }
+        try {
+            return Double.valueOf(token);
+        } catch (NumberFormatException ex) {
+            return null;
+        }
     }
 
     private String normalize(String value) {
