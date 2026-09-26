@@ -1178,3 +1178,43 @@ Started: 2026-09-16
 - All Phase 37 tasks marked `[x]`
 - Frontend tests passed (21); `BankPracticePickerTest` and `PaperGenerateRulesTest` passed
 - Planned commit: `fix(practice): order parts and collapse true/false nav`
+
+## Phase 38: Exam Countdown
+
+**Status:** completed
+
+Started: 2026-09-26
+
+### Work
+
+- Countdown on the take-exam page from `startedAt` plus the paper duration
+- Red full-screen flash for the last minute (steady red tint when reduced motion is on)
+- Auto-submit at 00:00, including blank answers
+- Server accepts partial answers only within 15 seconds of the deadline or after it; blank questions score 0
+- Tests: `exam-timer.test.ts`, `AttemptDeadlineTest`
+
+### User prompts
+
+1. > hết thời gian thì tự động nộp bài, khi còn 1p thì màn hình nháy đỏ liên tục
+
+### Skills used
+
+- identity
+- project-todo
+- git-auto-commit-push
+
+### Rules used
+
+- project-todo.mdc
+- identity.mdc
+- karpathy-guidelines.mdc
+- agent-auto-git.mdc
+- react.mdc
+- springboot.mdc
+
+### Outcome
+
+- All Phase 38 tasks marked `[x]`
+- Frontend tests passed (24); `AttemptDeadlineTest` and `AttemptCompletenessTest` passed
+- Browser check skipped: frontend and backend were not running, and `JWT_SECRET` was unset
+- Planned commit: `feat(attempt): auto-submit when exam time runs out`

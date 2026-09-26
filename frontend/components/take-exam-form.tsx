@@ -2,18 +2,29 @@
 
 import { submitAttemptAction, type AttemptFormState } from "@/lib/attempt-actions";
 import { examNavItems, examSteps, examSubmitFormData, isStepAnswered, isWrittenQuestion } from "@/lib/exam-steps";
+import { formatCountdown, isLastMinute, remainingMs } from "@/lib/exam-timer";
 import { ProblemAlert } from "@/components/problem-alert";
 import { StemText, promptStem, storedImageSrc } from "@/components/stem-text";
 import { SubmitButton } from "@/components/submit-button";
 import type { Paper, PaperItem } from "@/lib/types";
 import { useRouter } from "next/navigation";
-import { FormEvent, startTransition, useActionState, useEffect, useState } from "react";
+import { FormEvent, startTransition, useActionState, useEffect, useRef, useState } from "react";
 
 function answersKey(attemptId: string) {
   return `attempt-answers:${attemptId}`;
 }
 
-export function TakeExamForm({ attemptId, paper }: { attemptId: string; paper: Paper }) {
+const autoSubmitted = new Set<string>();
+
+export function TakeExamForm({
+  attemptId,
+  paper,
+  startedAt,
+}: {
+  attemptId: string;
+  paper: Paper;
+  startedAt: string;
+}) {
   const router = useRouter();
   const action = submitAttemptAction.bind(null, attemptId);
   const [state, formAction, pending] = useActionState(action, null as AttemptFormState);
@@ -22,11 +33,17 @@ export function TakeExamForm({ attemptId, paper }: { attemptId: string; paper: P
   const [current, setCurrent] = useState(0);
   const [answers, setAnswers] = useState<Record<string, string>>({});
   const [restored, setRestored] = useState(false);
+  const [now, setNow] = useState(() => Date.now());
+  const answersRef = useRef(answers);
+  answersRef.current = answers;
   const step = steps[current];
   const last = current === steps.length - 1;
   const doneCount = nav.filter((item) => isStepAnswered(item, answers)).length;
   const complete = nav.length > 0 && doneCount === nav.length;
   const remaining = nav.length - doneCount;
+  const timeLeft = remainingMs(startedAt, paper.durationMinutes, now);
+  const expired = timeLeft <= 0;
+  const warning = isLastMinute(timeLeft);
 
   useEffect(() => {
     try {
@@ -51,6 +68,23 @@ export function TakeExamForm({ attemptId, paper }: { attemptId: string; paper: P
   }, [answers, attemptId, restored]);
 
   useEffect(() => {
+    const id = window.setInterval(() => setNow(Date.now()), 250);
+    return () => window.clearInterval(id);
+  }, []);
+
+  useEffect(() => {
+    if (!expired || !restored || pending || autoSubmitted.has(attemptId)) {
+      return;
+    }
+    autoSubmitted.add(attemptId);
+    const data = examSubmitFormData(paper.questions, answersRef.current);
+    data.set("timedOut", "true");
+    startTransition(() => {
+      formAction(data);
+    });
+  }, [attemptId, expired, formAction, paper.questions, pending, restored]);
+
+  useEffect(() => {
     if (!state || !("ok" in state)) {
       return;
     }
@@ -65,20 +99,36 @@ export function TakeExamForm({ attemptId, paper }: { attemptId: string; paper: P
 
   function onSubmit(event: FormEvent<HTMLFormElement>) {
     event.preventDefault();
-    if (!complete) {
+    if (!complete && !expired) {
       const firstOpen = nav.find((item) => !isStepAnswered(item, answers));
       if (firstOpen) {
         setCurrent(firstOpen.stepIndex);
       }
       return;
     }
+    const data = examSubmitFormData(paper.questions, answers);
+    if (expired) {
+      data.set("timedOut", "true");
+    }
     startTransition(() => {
-      formAction(examSubmitFormData(paper.questions, answers));
+      formAction(data);
     });
   }
 
   return (
     <form onSubmit={onSubmit} className="space-y-6">
+      {warning ? <div className="exam-time-flash" aria-hidden /> : null}
+      <div
+        className={`sticky top-0 z-50 rounded-xl border px-4 py-3 ${
+          warning || expired ? "border-red-700 bg-red-600 text-white" : "border-line bg-card"
+        }`}
+        aria-live="polite"
+      >
+        <p className="text-sm font-medium">Thời gian còn lại</p>
+        <p className="mt-1 font-mono text-3xl font-semibold tabular-nums">{formatCountdown(timeLeft)}</p>
+        {warning ? <p className="mt-1 text-sm">Còn dưới 1 phút</p> : null}
+        {expired ? <p className="mt-1 text-sm">{pending ? "Hết giờ, đang nộp bài…" : "Hết giờ"}</p> : null}
+      </div>
       {state?.error ? <ProblemAlert message={state.error} /> : null}
       <section className="rounded-xl border border-line bg-card p-4">
         <p className="text-sm font-medium">Tiến độ làm bài</p>
@@ -106,7 +156,7 @@ export function TakeExamForm({ attemptId, paper }: { attemptId: string; paper: P
             );
           })}
         </div>
-        {complete ? null : (
+        {complete || expired ? null : (
           <p className="mt-3 text-xs text-danger">Trả lời hết tất cả các câu mới được nộp bài.</p>
         )}
       </section>
@@ -148,7 +198,9 @@ export function TakeExamForm({ attemptId, paper }: { attemptId: string; paper: P
             Next
           </button>
         )}
-        <SubmitButton disabled={!complete || pending}>{pending ? "Saving…" : "Nộp bài"}</SubmitButton>
+        <SubmitButton disabled={pending || (!complete && !expired)}>
+          {pending ? "Saving…" : expired ? "Nộp bài (hết giờ)" : "Nộp bài"}
+        </SubmitButton>
       </div>
       {step ? (
         <p className="text-xs text-muted">

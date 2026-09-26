@@ -24,8 +24,9 @@ export async function submitAttemptAction(
       textAnswer: text || null,
     };
   });
+  const timedOut = formData.get("timedOut") === "true";
   const unanswered = answers.filter((answer) => !answer.selectedChoiceId && !answer.textAnswer).length;
-  if (unanswered > 0) {
+  if (!timedOut && unanswered > 0) {
     return { error: `Còn ${unanswered} câu chưa làm. Trả lời hết rồi mới nộp bài.` };
   }
   try {

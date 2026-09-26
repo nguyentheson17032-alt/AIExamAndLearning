@@ -27,6 +27,7 @@ import org.springframework.transaction.annotation.Transactional;
 
 import java.math.BigDecimal;
 import java.math.RoundingMode;
+import java.time.Instant;
 import java.util.ArrayList;
 import java.util.LinkedHashMap;
 import java.util.List;
@@ -67,10 +68,17 @@ public class AttemptService {
         Map<UUID, PaperQuestion> items = attempt.getPaper().getItems().stream()
                 .collect(Collectors.toMap(item -> item.getQuestion().getId(), Function.identity()));
         List<UUID> missing = AttemptCompleteness.unanswered(items.keySet(), request.answers());
-        if (!missing.isEmpty()) {
+        boolean partialOk = AttemptDeadline.allowsPartial(
+                attempt.getStartedAt(),
+                attempt.getPaper().getDurationMinutes(),
+                Instant.now());
+        if (!missing.isEmpty() && !partialOk) {
             throw new BusinessRuleException("INCOMPLETE_ATTEMPT", "Answer every question before submitting");
         }
         for (AnswerSubmitRequest submitted : request.answers()) {
+            if (!AttemptCompleteness.filled(submitted.selectedChoiceId(), submitted.textAnswer())) {
+                continue;
+            }
             PaperQuestion item = items.get(submitted.questionId());
             if (item == null) {
                 throw new BusinessRuleException("QUESTION_NOT_ON_PAPER", "Question is not on this paper");
@@ -79,6 +87,13 @@ public class AttemptService {
             QuestionChoice selected = resolveChoice(question, submitted.selectedChoiceId());
             AttemptAnswer answer = attempt.addAnswer(question, selected, submitted.textAnswer());
             grade(answer, question, selected, submitted.textAnswer(), item.getPoints());
+        }
+        if (partialOk) {
+            for (UUID questionId : missing) {
+                PaperQuestion item = items.get(questionId);
+                AttemptAnswer blank = attempt.addAnswer(item.getQuestion(), null, null);
+                blank.grade(false, BigDecimal.ZERO.setScale(2), null, GradedBy.AUTO);
+            }
         }
         applyPartTwoGroupScores(attempt, items);
         attempt.markSubmitted();

@@ -41,3 +41,29 @@ select,
 textarea {
   font: inherit;
 }
+
+.exam-time-flash {
+  position: fixed;
+  inset: 0;
+  z-index: 40;
+  pointer-events: none;
+  background-color: rgba(220, 38, 38, 0);
+  animation: exam-time-flash 0.8s ease-in-out infinite;
+}
+
+@keyframes exam-time-flash {
+  0%,
+  100% {
+    background-color: rgba(220, 38, 38, 0);
+  }
+  50% {
+    background-color: rgba(220, 38, 38, 0.45);
+  }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .exam-time-flash {
+    animation: none;
+    background-color: rgba(220, 38, 38, 0.28);
+  }
+}

@@ -247,3 +247,11 @@
 - [x] Label items I.n, II.na–d, and III.n without duplicate numbers
 - [x] Show one progress chip per câu, not one per ý
 - [x] Add tests for section order and nav labels
+
+## Phase 38: Exam Countdown
+
+- [x] Show remaining time from the attempt start and paper duration
+- [x] Flash the screen red through the last minute
+- [x] Auto-submit when time runs out, including unanswered questions
+- [x] Accept partial answers on the server only at the deadline
+- [x] Add tests for the countdown and the deadline rule

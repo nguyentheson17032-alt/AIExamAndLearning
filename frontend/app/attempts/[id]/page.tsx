@@ -26,7 +26,7 @@ export default async function AttemptDetailPage({ params }: { params: Promise<{ 
         }
       />
       {inProgress ? (
-        <TakeExamForm attemptId={id} paper={paper} />
+        <TakeExamForm attemptId={id} paper={paper} startedAt={attempt.startedAt} />
       ) : (
         <div className="space-y-4">
           <p className="text-sm text-muted">
