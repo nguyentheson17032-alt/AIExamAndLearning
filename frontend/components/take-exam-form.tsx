@@ -29,7 +29,8 @@ export function TakeExamForm({
   const action = submitAttemptAction.bind(null, attemptId);
   const [state, formAction, pending] = useActionState(action, null as AttemptFormState);
   const steps = examSteps(paper.questions);
-  const nav = examNavItems(steps);
+  const numbered = paper.kind === "PRACTICE" || paper.source === "AI_GENERATED";
+  const nav = examNavItems(steps, { numbered });
   const [current, setCurrent] = useState(0);
   const [answers, setAnswers] = useState<Record<string, string>>({});
   const [restored, setRestored] = useState(false);

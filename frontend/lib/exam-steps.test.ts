@@ -98,6 +98,21 @@ describe("examSteps", () => {
     assert.equal(isStepAnswered(nav[0], { b: "true", c: "false" }), true);
   });
 
+  it("numbers practice and AI steps from 1 through n+1", () => {
+    const nav = examNavItems(
+      examSteps([
+        item({ questionId: "10188258-14ea-41f8-99e8-a6a35a410c86", sortOrder: 2 }),
+        item({ questionId: "00d7d161-cf2d-4b14-9f4f-44ce46a86465", sortOrder: 1 }),
+      ]),
+      { numbered: true },
+    );
+    assert.deepEqual(
+      nav.map((entry) => entry.label),
+      ["1", "2"],
+    );
+    assert.equal(nav[0].questionId, "00d7d161-cf2d-4b14-9f4f-44ce46a86465");
+  });
+
   it("puts every answer into FormData even when some questions are not on screen", () => {
     const choice = item({ questionId: "a", sortOrder: 1 });
     const written = item({

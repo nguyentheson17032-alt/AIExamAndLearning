@@ -39,11 +39,11 @@ export function examSubmitFormData(items: PaperItem[], answers: Record<string, s
   return formData;
 }
 
-export function examNavItems(steps: ExamStep[]): ExamNavItem[] {
+export function examNavItems(steps: ExamStep[], options?: { numbered?: boolean }): ExamNavItem[] {
   return steps.map((step, stepIndex) => ({
     questionId: step.items[0].questionId,
     questionIds: step.items.map((item) => item.questionId),
-    label: stepNavLabel(step),
+    label: options?.numbered ? String(stepIndex + 1) : stepNavLabel(step),
     stepIndex,
   }));
 }

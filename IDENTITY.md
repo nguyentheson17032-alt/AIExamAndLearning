@@ -1364,3 +1364,39 @@ Started: 2026-09-27
 - Backend compile succeeded; paper-group tests passed
 - Browser: Đề tuyển sinh lists Đề số 1 through Đề số 32, with later uploads at the end
 - Planned commit: `feat(papers): order each group by earliest update`
+
+## Phase 43: Practice Progress Numbers
+
+**Status:** completed
+
+Started: 2026-09-27
+
+### Work
+
+- Practice and AI-generated take-exam progress chips use 1, 2, 3, … instead of question ids
+- Official exam papers still use labels such as I.1 and II.1
+
+### User prompts
+
+1. > cái này khi được practice hay AI gen ra nó hiện tiến độ làm bài như trên, tôi muốn đánh số từ 1, 2, 3,..., n, n+1
+
+### Skills used
+
+- identity
+- project-todo
+- git-auto-commit-push
+
+### Rules used
+
+- project-todo.mdc
+- identity.mdc
+- karpathy-guidelines.mdc
+- agent-auto-git.mdc
+- react.mdc
+
+### Outcome
+
+- All Phase 43 tasks marked `[x]`
+- Exam-step tests passed
+- Browser: a 3-question Elo practice shows progress chips 1, 2, 3 and chip 3 opens câu 3
+- Planned commit: `fix(practice): number progress chips from 1`

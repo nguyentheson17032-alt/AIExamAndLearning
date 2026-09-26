@@ -276,3 +276,7 @@
 
 - [x] Order each paper group by the earliest update
 - [x] Label that order Đề số 1 through Đề số n+1
+
+## Phase 43: Practice Progress Numbers
+
+- [x] Number practice and AI progress chips 1 through n+1
