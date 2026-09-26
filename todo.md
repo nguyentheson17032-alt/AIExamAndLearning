@@ -271,3 +271,8 @@
 
 - [x] Show tuyển sinh, TNTHPT, practice, and question as subject-style cards
 - [x] Open a group only after its card is clicked
+
+## Phase 42: Paper Update Order
+
+- [x] Order each paper group by the earliest update
+- [x] Label that order Đề số 1 through Đề số n+1

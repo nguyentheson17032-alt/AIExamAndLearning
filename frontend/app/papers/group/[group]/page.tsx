@@ -2,7 +2,7 @@ import { EmptyState } from "@/components/empty-state";
 import { PageHeader } from "@/components/page-header";
 import { backendFetch } from "@/lib/backend";
 import { requireUser } from "@/lib/guards";
-import { groupPapers, paperGroupById } from "@/lib/paper-groups";
+import { groupPapers, paperGroupById, paperOrderLabel } from "@/lib/paper-groups";
 import type { PageResponse, Paper, PaperSet } from "@/lib/types";
 import Link from "next/link";
 import { notFound } from "next/navigation";
@@ -29,16 +29,20 @@ export default async function PaperGroupPage({ params }: { params: Promise<{ gro
         <EmptyState title="Chưa có đề" description="Nhóm này chưa có đề nào." />
       ) : (
         <ul className="space-y-3">
-          {papers.map((paper) => (
-            <li key={paper.id}>
-              <Link href={`/papers/${paper.id}`} className="block rounded-xl border border-line bg-card p-5 hover:border-accent">
-                <p className="text-xs text-muted">
-                  {paper.kind} · {paper.durationMinutes} min · Elo {paper.targetEloMin}–{paper.targetEloMax}
-                </p>
-                <h2 className="mt-1 font-medium">{paper.title}</h2>
-              </Link>
-            </li>
-          ))}
+          {papers.map((paper, index) => {
+            const label = paperOrderLabel(index + 1);
+            return (
+              <li key={paper.id}>
+                <Link href={`/papers/${paper.id}`} className="block rounded-xl border border-line bg-card p-5 hover:border-accent">
+                  <p className="text-xs text-muted">
+                    {paper.kind} · {paper.durationMinutes} min · Elo {paper.targetEloMin}–{paper.targetEloMax}
+                  </p>
+                  <h2 className="mt-1 font-medium">{label}</h2>
+                  {paper.title === label ? null : <p className="mt-1 text-sm text-muted">{paper.title}</p>}
+                </Link>
+              </li>
+            );
+          })}
         </ul>
       )}
     </>

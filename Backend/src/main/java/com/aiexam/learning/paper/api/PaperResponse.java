@@ -25,7 +25,8 @@ public record PaperResponse(
         int targetEloMax,
         ContentStatus status,
         List<PaperItemResponse> questions,
-        Instant createdAt
+        Instant createdAt,
+        Instant updatedAt
 ) {
     public static PaperResponse from(Paper paper, boolean includeAnswer) {
         List<PaperItemResponse> items = paper.getItems().stream()
@@ -55,7 +56,8 @@ public record PaperResponse(
                 paper.getTargetEloMax(),
                 paper.getStatus(),
                 items,
-                paper.getCreatedAt()
+                paper.getCreatedAt(),
+                paper.getUpdatedAt()
         );
     }
 }

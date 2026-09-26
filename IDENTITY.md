@@ -1327,3 +1327,40 @@ Started: 2026-09-27
 - Frontend paper-group tests passed
 - Browser: Papers shows four cards and no paper list; `/papers/group/admission` lists Đề số 1–30; `/papers/group/practice` lists only practice papers
 - Planned commit: `feat(papers): open a group before listing its papers`
+
+## Phase 42: Paper Update Order
+
+**Status:** completed
+
+Started: 2026-09-27
+
+### Work
+
+- Each paper group is ordered by `updatedAt`, earliest update first
+- The list labels that order Đề số 1, Đề số 2, … Đề số n+1 and keeps the original title when it differs
+
+### User prompts
+
+1. > các đề được sắp xếp theo mẫu đề số 1, đề số 2,..., đề số n, đề số n+1 theo đề nào update trước trong paper trong mỗi đề tuyển sinh, đề tnthpt, đề practice, đề question
+
+### Skills used
+
+- identity
+- project-todo
+- git-auto-commit-push
+
+### Rules used
+
+- project-todo.mdc
+- identity.mdc
+- karpathy-guidelines.mdc
+- agent-auto-git.mdc
+- react.mdc
+- springboot.mdc
+
+### Outcome
+
+- All Phase 42 tasks marked `[x]`
+- Backend compile succeeded; paper-group tests passed
+- Browser: Đề tuyển sinh lists Đề số 1 through Đề số 32, with later uploads at the end
+- Planned commit: `feat(papers): order each group by earliest update`

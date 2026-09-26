@@ -1,6 +1,6 @@
 import assert from "node:assert/strict";
 import { describe, it } from "node:test";
-import { groupPapers, paperGroupById, paperGroupId } from "./paper-groups";
+import { groupPapers, paperGroupById, paperGroupId, paperOrderLabel } from "./paper-groups";
 import type { Paper } from "./types";
 
 describe("paper groups", () => {
@@ -71,19 +71,25 @@ describe("paper groups", () => {
     assert.equal(paperGroupById("missing"), null);
   });
 
-  it("sorts a set by exam number", () => {
+  it("orders a group by the earliest update, then labels đề số 1 through n+1", () => {
     const grouped = groupPapers(
-      [paper("b", 2, "set-1"), paper("a", 1, "set-1")],
+      [
+        paper("later", 9, "set-1", "2026-09-27T10:00:00Z"),
+        paper("earlier", 1, "set-1", "2026-09-27T01:00:00Z"),
+      ],
       new Map([["set-1", "Bộ đề tuyển sinh"]]),
     );
     assert.deepEqual(
-      grouped.admission.map((item) => item.examNumber),
-      [1, 2],
+      grouped.admission.map((item) => item.id),
+      ["earlier", "later"],
     );
+    assert.equal(paperOrderLabel(1), "Đề số 1");
+    assert.equal(paperOrderLabel(2), "Đề số 2");
+    assert.equal(paperOrderLabel(grouped.admission.length + 1), "Đề số 3");
   });
 });
 
-function paper(title: string, examNumber: number, paperSetId: string): Paper {
+function paper(title: string, examNumber: number, paperSetId: string, updatedAt = "2026-09-27T00:00:00Z"): Paper {
   return {
     id: title,
     authorId: "author",
@@ -100,5 +106,6 @@ function paper(title: string, examNumber: number, paperSetId: string): Paper {
     status: "PUBLISHED",
     questions: [],
     createdAt: "2026-09-27T00:00:00Z",
+    updatedAt,
   };
 }

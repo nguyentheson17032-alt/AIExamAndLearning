@@ -126,6 +126,7 @@ export type Paper = {
   status: ContentStatus;
   questions: PaperItem[];
   createdAt: string;
+  updatedAt: string | null;
 };
 
 export type PaperSetItem = {

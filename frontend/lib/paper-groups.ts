@@ -76,13 +76,22 @@ export function groupPapers(papers: Paper[], setTitleById: Map<string, string>):
   return grouped;
 }
 
+export function paperOrderLabel(index: number): string {
+  return `Đề số ${index}`;
+}
+
 function comparePapers(a: Paper, b: Paper): number {
-  const examNumberA = a.examNumber ?? Number.MAX_SAFE_INTEGER;
-  const examNumberB = b.examNumber ?? Number.MAX_SAFE_INTEGER;
-  if (examNumberA !== examNumberB) {
-    return examNumberA - examNumberB;
+  const updatedA = paperUpdatedAt(a);
+  const updatedB = paperUpdatedAt(b);
+  if (updatedA !== updatedB) {
+    return updatedA - updatedB;
   }
-  return a.title.localeCompare(b.title, "vi");
+  return a.id.localeCompare(b.id);
+}
+
+function paperUpdatedAt(paper: Paper): number {
+  const time = Date.parse(paper.updatedAt ?? paper.createdAt);
+  return Number.isNaN(time) ? Number.MAX_SAFE_INTEGER : time;
 }
 
 function isAdmission(value: string): boolean {
