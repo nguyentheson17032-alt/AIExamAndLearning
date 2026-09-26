@@ -1254,3 +1254,40 @@ Started: 2026-09-26
 - All Phase 39 tasks marked `[x]`
 - Browser: last-minute exam shows a light red clock only; no full-screen overlay
 - Planned commit: `fix(exam): flash only the countdown during the last minute`
+
+## Phase 40: Paper Groups
+
+**Status:** completed
+
+Started: 2026-09-27
+
+### Work
+
+- Split `/papers` into Đề tuyển sinh, Đề TNTHPT, Đề practice, and Đề question
+- Practice papers stay in practice; set titles and paper titles place tuyển sinh and TNTHPT (including “thi thử TN”); other exams stay in question
+- Tests in `paper-groups.test.ts`
+
+### User prompts
+
+1. > tôi muốn trang paper chia đề tuyển sinh, đề tnthpt, đề practice, đề question
+
+### Skills used
+
+- identity
+- project-todo
+- git-auto-commit-push
+
+### Rules used
+
+- project-todo.mdc
+- identity.mdc
+- karpathy-guidelines.mdc
+- agent-auto-git.mdc
+- react.mdc
+
+### Outcome
+
+- All Phase 40 tasks marked `[x]`
+- Frontend tests passed (30)
+- Browser: Papers shows 32 tuyển sinh, 11 TNTHPT, 28 practice, 1 question; opening a tuyển sinh paper still shows the exam and Làm đề
+- Planned commit: `feat(papers): split the papers page into four groups`
