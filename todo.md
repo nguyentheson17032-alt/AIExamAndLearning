@@ -266,3 +266,8 @@
 - [x] Split the papers page into tuyển sinh, TNTHPT, practice, and question
 - [x] Classify papers from kind and exam-set title
 - [x] Add tests for the four groups
+
+## Phase 41: Paper Group Cards
+
+- [x] Show tuyển sinh, TNTHPT, practice, and question as subject-style cards
+- [x] Open a group only after its card is clicked

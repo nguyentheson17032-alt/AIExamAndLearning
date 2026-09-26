@@ -2,28 +2,36 @@ import type { Paper, PaperKind } from "./types";
 
 export type PaperGroupId = "admission" | "tnthpt" | "practice" | "question";
 
-export const PAPER_GROUPS: { id: PaperGroupId; title: string; description: string }[] = [
+export const PAPER_GROUPS: { id: PaperGroupId; code: string; title: string; description: string }[] = [
   {
     id: "admission",
+    code: "TS",
     title: "Đề tuyển sinh",
     description: "Đề và bộ đề tuyển sinh vào lớp 10.",
   },
   {
     id: "tnthpt",
+    code: "TNTHPT",
     title: "Đề TNTHPT",
     description: "Đề thi tốt nghiệp trung học phổ thông.",
   },
   {
     id: "practice",
+    code: "PRACTICE",
     title: "Đề practice",
     description: "Đề luyện tập và đề tạo theo Elo.",
   },
   {
     id: "question",
+    code: "QUESTION",
     title: "Đề question",
     description: "Đề ghép từ ngân hàng câu hỏi.",
   },
 ];
+
+export function paperGroupById(id: string) {
+  return PAPER_GROUPS.find((group) => group.id === id) ?? null;
+}
 
 type GroupablePaper = {
   title: string;

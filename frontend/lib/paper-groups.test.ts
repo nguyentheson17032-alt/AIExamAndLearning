@@ -1,6 +1,6 @@
 import assert from "node:assert/strict";
 import { describe, it } from "node:test";
-import { groupPapers, paperGroupId } from "./paper-groups";
+import { groupPapers, paperGroupById, paperGroupId } from "./paper-groups";
 import type { Paper } from "./types";
 
 describe("paper groups", () => {
@@ -64,6 +64,11 @@ describe("paper groups", () => {
       ),
       "question",
     );
+  });
+
+  it("finds a group by id", () => {
+    assert.equal(paperGroupById("admission")?.title, "Đề tuyển sinh");
+    assert.equal(paperGroupById("missing"), null);
   });
 
   it("sorts a set by exam number", () => {

@@ -1291,3 +1291,39 @@ Started: 2026-09-27
 - Frontend tests passed (30)
 - Browser: Papers shows 32 tuyển sinh, 11 TNTHPT, 28 practice, 1 question; opening a tuyển sinh paper still shows the exam and Làm đề
 - Planned commit: `feat(papers): split the papers page into four groups`
+
+## Phase 41: Paper Group Cards
+
+**Status:** completed
+
+Started: 2026-09-27
+
+### Work
+
+- Papers lists four cards in the same layout as Subjects: code, title, description
+- Clicking a card opens `/papers/group/[group]` and only then lists that group's papers
+
+### User prompts
+
+1. > nó thiết kế giống như thế này, bấm vào mới hiện đề
+
+### Skills used
+
+- identity
+- project-todo
+- git-auto-commit-push
+
+### Rules used
+
+- project-todo.mdc
+- identity.mdc
+- karpathy-guidelines.mdc
+- agent-auto-git.mdc
+- react.mdc
+
+### Outcome
+
+- All Phase 41 tasks marked `[x]`
+- Frontend paper-group tests passed
+- Browser: Papers shows four cards and no paper list; `/papers/group/admission` lists Đề số 1–30; `/papers/group/practice` lists only practice papers
+- Planned commit: `feat(papers): open a group before listing its papers`
