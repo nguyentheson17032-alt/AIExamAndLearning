@@ -22,6 +22,10 @@ spring:
     baseline-on-migrate: true
     validate-on-migrate: true
     out-of-order: false
+  servlet:
+    multipart:
+      max-file-size: 20MB
+      max-request-size: 20MB
   mvc:
     problemdetails:
       enabled: true

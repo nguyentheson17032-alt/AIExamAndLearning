@@ -2,11 +2,13 @@ import { EmptyState } from "@/components/empty-state";
 import { PageHeader } from "@/components/page-header";
 import { backendFetch } from "@/lib/backend";
 import { requireUser } from "@/lib/guards";
+import { isTeacher } from "@/lib/session";
 import type { PaperSet, Subject } from "@/lib/types";
 import Link from "next/link";
 
 export default async function SubjectDetailPage({ params }: { params: Promise<{ id: string }> }) {
-  await requireUser();
+  const user = await requireUser();
+  const teacher = isTeacher(user);
   const { id } = await params;
   const [subject, sets] = await Promise.all([
     backendFetch<Subject>(`/api/v1/subjects/${id}`),
@@ -14,7 +16,13 @@ export default async function SubjectDetailPage({ params }: { params: Promise<{ 
   ]);
   return (
     <>
-      <PageHeader title={subject.name} description={subject.description ?? subject.code} />
+      <PageHeader title={subject.name} description={subject.description ?? subject.code}>
+        {teacher ? (
+          <Link href={`/subjects/${id}/upload`} className="rounded-md bg-accent px-3 py-2 text-sm text-white hover:bg-accent-hover">
+            Tải đề
+          </Link>
+        ) : null}
+      </PageHeader>
       <section>
         {sets.length === 0 ? (
           <EmptyState title="Chưa có bộ đề" description="Bộ đề thuộc môn này sẽ hiện ở đây." />

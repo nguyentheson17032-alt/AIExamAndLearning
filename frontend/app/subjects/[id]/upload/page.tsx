@@ -1,0 +1,26 @@
+import { DocxExamImportForm } from "@/components/docx-exam-import-form";
+import { PageHeader } from "@/components/page-header";
+import { backendFetch } from "@/lib/backend";
+import { requireTeacher } from "@/lib/guards";
+import type { Subject } from "@/lib/types";
+import Link from "next/link";
+
+export default async function UploadExamPage({ params }: { params: Promise<{ id: string }> }) {
+  await requireTeacher();
+  const { id } = await params;
+  const subject = await backendFetch<Subject>(`/api/v1/subjects/${id}`);
+  return (
+    <>
+      <PageHeader
+        title="Tải đề"
+        description={`${subject.name} · File Word .docx. Mỗi đoạn “Câu 1”, “Câu 2”… thành một câu.`}
+      />
+      <p className="mb-6 text-sm">
+        <Link href={`/subjects/${id}`} className="text-accent hover:underline">
+          ← Quay lại môn học
+        </Link>
+      </p>
+      <DocxExamImportForm subjectId={id} />
+    </>
+  );
+}

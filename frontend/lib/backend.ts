@@ -54,7 +54,7 @@ export function errorMessage(error: unknown, fallback = "Request failed"): strin
 
 export async function backendFetch<T>(path: string, init: RequestInit = {}): Promise<T> {
   const requestHeaders = new Headers(init.headers);
-  if (init.body && !requestHeaders.has("Content-Type")) {
+  if (init.body && !(init.body instanceof FormData) && !requestHeaders.has("Content-Type")) {
     requestHeaders.set("Content-Type", "application/json");
   }
   const token = await getAccessToken();
