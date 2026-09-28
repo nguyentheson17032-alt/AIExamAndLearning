@@ -611,11 +611,15 @@ def part1_keys_from(lines: list[str]) -> list[str]:
             break
     if part1:
         return part1
+    collected: list[str] = []
     for index, line in enumerate(lines):
-        if fold_vi(line) in {"DAPAN", "DA"}:
-            run = letter_run_after(lines, index + 1)
-            if len(run) >= 4:
-                return run
+        if fold_vi(line) not in {"DAPAN", "DA"}:
+            continue
+        run = letter_run_after(lines, index + 1)
+        if run:
+            collected.extend(run)
+    if len(collected) >= 4:
+        return collected
     return longest_letter_run(lines)
 
 
@@ -803,10 +807,11 @@ def build_bank(doc: pymupdf.Document, out: Path, questions: list[dict], solution
         short_points = part_iii_points(*part_counts)
         minutes = duration_minutes(*part_counts)
         raw_sols = sols_by_exam.get(number, [])
-        if raw_sols and all(item.get("part") is None for item in raw_sols):
-            mapped_sols = [local for item in raw_sols if (local := local_solution(item, counts)) is not None]
-        else:
-            mapped_sols = [item for item in raw_sols if item.get("part")]
+        mapped_sols = []
+        for item in raw_sols:
+            local = item if item.get("part") else local_solution(item, counts)
+            if local is not None:
+                mapped_sols.append(local)
         sol_index = {(item["part"], item["number"]): item for item in mapped_sols}
         part1_keys, part2_keys, part3_keys = parse_answer_tables(rows, number)
         items = []
@@ -872,7 +877,7 @@ def build_bank(doc: pymupdf.Document, out: Path, questions: list[dict], solution
                 "groupKey": f"III.{question['number']}",
                 "stem": marker,
                 "choices": [],
-                "answerKey": short_key(sol_text) or (part3_keys[qn - 1] if qn - 1 < len(part3_keys) else ""),
+                "answerKey": (part3_keys[qn - 1] if qn - 1 < len(part3_keys) else "") or short_key(sol_text),
                 "explanation": expl,
                 "points": short_points,
                 "sortOrder": sort,

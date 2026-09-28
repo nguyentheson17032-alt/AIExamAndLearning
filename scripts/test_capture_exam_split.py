@@ -13,6 +13,7 @@ from capture_exam_docx import (
     is_het,
     labeled_answer,
     parse_answer_tables,
+    part1_keys_from,
     part_iii_points,
     shared_targets,
 )
@@ -62,6 +63,13 @@ class CaptureSplitTest(unittest.TestCase):
         self.assertEqual(labeled_answer("Đáp án: 163 A"), "163")
         self.assertEqual(labeled_answer("Đáp án: 21 lần/phút"), "21")
         self.assertEqual(labeled_answer("Đáp án: 1,3 lít/s"), "1,3")
+        two_rows = [
+            "Câu", "1", "2", "3", "4", "5", "6", "7", "8", "9",
+            "Đáp án", "D", "B", "C", "C", "A", "A", "B", "D", "A",
+            "Câu", "10", "11", "12", "13", "14", "15", "16", "17", "18",
+            "Đáp án", "D", "B", "C", "A", "B", "B", "D", "C", "A",
+        ]
+        self.assertEqual(part1_keys_from(two_rows), list("DBCCAABDADBCABB DCA".replace(" ", "")))
         self.assertTrue(is_detail("PHẦN LỜI GIẢI"))
         self.assertTrue(is_detail("LỜI GIẢI THAM KHẢO"))
         self.assertFalse(is_detail("Lời giải:"))
