@@ -12,7 +12,7 @@ from PIL import Image
 
 ZOOM = 2.0
 HEADER_MAX = 24.0
-LIMITS = {"I": 18, "II": 8, "III": 12}
+LIMITS = {"I": 40, "II": 8, "III": 12}
 SOL_LIMIT = 48
 PART_FILE = {"I": "i", "II": "ii", "III": "iii"}
 SECTION = {"I": "PART_I", "II": "PART_II", "III": "PART_III"}
@@ -120,19 +120,40 @@ def exam_number(text: str) -> int | None:
     return int(match.group(1))
 
 
+def fold_vi(text: str) -> str:
+    """fold() drops Đ because it is not a combining accent. Map it to D first."""
+    return fold(text.replace("Đ", "D").replace("đ", "d"))
+
+
 def is_het(text: str) -> bool:
     stripped = text.strip()
     core = re.sub(r"[\s\-–—_=.*•·]+", "", stripped)
-    token = fold(core)
-    if token == "HET":
+    if fold(core) == "HET":
         return True
-    folded = fold(stripped)
-    return folded.startswith("DAPAN") and len(stripped) <= 80 and not re.search(r"\d", stripped)
+    folded = fold_vi(stripped)
+    if folded == "DAPAN":
+        return False
+    if ":" in stripped or re.search(r"\d", stripped) or len(stripped) > 40:
+        return False
+    return folded.startswith("DAPAN")
+
+
+def shared_targets(text: str) -> list[int] | None:
+    """«Sử dụng các thông tin sau cho Câu 3 và Câu 4» belongs to those later questions."""
+    stripped = text.strip()
+    if not re.match(r"(?i)^sử\s*dụng\s+các\s+thông\s+tin\s+sau\s+cho\s+câu\s+\d+", stripped):
+        return None
+    head = re.split(r"[:.]", stripped, maxsplit=1)[0]
+    numbers = [int(number) for number in re.findall(r"(?i)câu\s+(\d+)", head)]
+    return numbers or None
 
 
 def is_detail(text: str) -> bool:
-    token = fold(text.strip())
-    return token.startswith("LOIGIAICHITIET") or token.startswith("PHANLOIGIAI")
+    stripped = text.strip()
+    token = fold(stripped)
+    if token.startswith("LOIGIAICHITIET") or token.startswith("PHANLOIGIAI"):
+        return True
+    return ":" not in stripped and token.startswith("LOIGIAITHAMKHAO")
 
 
 def events(doc: pymupdf.Document) -> list[tuple[int, float, str, object]]:
@@ -165,6 +186,10 @@ def events(doc: pymupdf.Document) -> list[tuple[int, float, str, object]]:
             if is_het(text):
                 found.append((index, y0, "het", None))
                 continue
+            targets = shared_targets(text)
+            if targets:
+                found.append((index, y0, "shared", targets))
+                continue
             question = re.match(r"^Câu\s+(\d+)\s*[:.：]", text) or re.match(r"^Câu\s+(\d+)\s*$", text)
             if question:
                 found.append((index, y0, "question", int(question.group(1))))
@@ -180,6 +205,7 @@ def collect_questions(doc: pymupdf.Document) -> list[dict]:
     in_answers = False
     seen: dict[str, set[int]] = {"I": set(), "II": set(), "III": set()}
     pending = None
+    shared = None
 
     def close(end_page: int, end_y: float) -> None:
         nonlocal pending
@@ -197,31 +223,57 @@ def collect_questions(doc: pymupdf.Document) -> list[dict]:
             part = None
             in_answers = False
             seen = {"I": set(), "II": set(), "III": set()}
+            shared = None
             continue
         if kind in {"het", "detail"}:
             close(page_i, y0)
             part = None
             in_answers = True
+            shared = None
             continue
         if in_answers:
+            continue
+        if kind == "shared":
+            close(page_i, y0)
+            shared = {
+                "start_page": page_i,
+                "start_y": y0,
+                "end_page": None,
+                "end_y": None,
+                "targets": {int(number) for number in value},
+            }
             continue
         if kind == "part":
             close(page_i, y0)
             part = str(value)
             continue
-        if kind != "question" or exam is None or part is None:
+        if kind != "question" or exam is None:
             continue
+        if part is None:
+            part = "I"
         number = int(value)
         if number in seen[part] or number < 1 or number > LIMITS[part]:
             continue
         close(page_i, y0)
         seen[part].add(number)
+        if shared is not None and shared["end_y"] is None:
+            shared["end_page"] = page_i
+            shared["end_y"] = y0
+        preamble = None
+        if shared is not None and shared["end_y"] is not None and number in shared["targets"]:
+            preamble = {
+                "start_page": shared["start_page"],
+                "start_y": shared["start_y"],
+                "end_page": shared["end_page"],
+                "end_y": shared["end_y"],
+            }
         pending = {
             "exam": exam,
             "part": part,
             "number": number,
             "start_page": page_i,
             "start_y": y0,
+            "preamble": preamble,
         }
     if pending is not None:
         close(doc.page_count - 1, content_bottom(doc[-1]))
@@ -294,15 +346,15 @@ def collect_solutions(doc: pymupdf.Document) -> list[dict]:
     return solutions
 
 
-def clip_page(page: pymupdf.Page, y0: float, y1: float) -> Image.Image:
+def clip_page(page: pymupdf.Page, y0: float, y1: float) -> Image.Image | None:
     rect = pymupdf.Rect(page.rect.x0 + 36, y0 + 0.4, page.rect.x1 - 36, y1 - 3)
     if rect.height < 8 or rect.width < 8:
-        raise ValueError("empty clip")
+        return None
     pix = page.get_pixmap(matrix=pymupdf.Matrix(ZOOM, ZOOM), clip=rect, alpha=False)
     return Image.frombytes("RGB", (pix.width, pix.height), pix.samples)
 
 
-def render_region(doc: pymupdf.Document, item: dict) -> Image.Image:
+def span_pieces(doc: pymupdf.Document, item: dict) -> list[Image.Image]:
     pieces: list[Image.Image] = []
     for page_i in range(item["start_page"], item["end_page"] + 1):
         page = doc[page_i]
@@ -312,7 +364,18 @@ def render_region(doc: pymupdf.Document, item: dict) -> Image.Image:
             continue
         if bottom <= top + 6:
             continue
-        pieces.append(clip_page(page, top, bottom))
+        image = clip_page(page, top, bottom)
+        if image is not None:
+            pieces.append(image)
+    return pieces
+
+
+def render_region(doc: pymupdf.Document, item: dict) -> Image.Image:
+    pieces: list[Image.Image] = []
+    preamble = item.get("preamble")
+    if preamble is not None:
+        pieces.extend(span_pieces(doc, preamble))
+    pieces.extend(span_pieces(doc, item))
     if not pieces:
         raise ValueError("no pieces")
     if len(pieces) == 1:
@@ -396,6 +459,12 @@ def answer_box(text: str) -> str:
     return ""
 
 
+def leading_number(text: str) -> str:
+    compact = text.replace(" ", "").replace("–", "-").replace("−", "-")
+    match = re.match(r"-?\d+(?:[.,]\d+)?", compact)
+    return match.group(0) if match else ""
+
+
 def labeled_answer(text: str) -> str:
     lines = [line.strip() for line in text.splitlines() if line.strip()]
     for index, line in enumerate(lines):
@@ -405,9 +474,9 @@ def labeled_answer(text: str) -> str:
         value = match.group(1).strip()
         if not value and index + 1 < len(lines):
             value = lines[index + 1].strip()
-        value = value.replace(" ", "").replace("–", "-").replace("−", "-").strip(".")
-        if re.fullmatch(r"-?\d+(?:[.,]\d+)?", value):
-            return value
+        number = leading_number(value)
+        if number:
+            return number
     return ""
 
 
@@ -473,6 +542,10 @@ def document_rows(doc: pymupdf.Document) -> list[tuple[str, object]]:
 
 def answer_rows_for_exam(rows: list[tuple[str, object]], exam_number_value: int) -> list[tuple[str, object]]:
     """Answer-key lines after this exam's HẾT and before its lời giải or the next đề."""
+    if not any(kind == "exam" for kind, _value in rows):
+        if exam_number_value != 1:
+            return []
+        rows = [("exam", 1), *rows]
     exam = None
     started = False
     chosen: list[tuple[str, object]] = []
@@ -495,19 +568,39 @@ def answer_rows_for_exam(rows: list[tuple[str, object]], exam_number_value: int)
     return chosen
 
 
-def parse_answer_tables(rows: list[tuple[str, object]], exam_number_value: int) -> tuple[list[str], list[str], list[str]]:
-    sections: dict[str, list[str]] = {"I": [], "II": [], "III": []}
-    current = None
-    for kind, value in answer_rows_for_exam(rows, exam_number_value):
-        if kind == "part":
-            current = str(value)
-            continue
-        if current and kind == "text":
-            sections[current].append(str(value))
+def short_answer_token(text: str) -> str | None:
+    """A filled-in short answer such as ``2,52 mA`` or ``11,6%``. Bare question numbers are not answers."""
+    raw = text.strip().replace("–", "-").replace("−", "-")
+    match = re.fullmatch(r"(-?\d+(?:[.,]\d+)?)(\s*%|%|\s+[A-Za-zµμΩ°/]+)?", raw)
+    if not match:
+        return None
+    number = match.group(1)
+    unit = (match.group(2) or "").strip()
+    if re.fullmatch(r"\d{1,2}", number) and not unit:
+        return None
+    if unit == "%":
+        return f"{number}%"
+    if unit:
+        return f"{number} {unit}"
+    return number
 
+
+def letter_run_after(lines: list[str], start: int) -> list[str]:
+    run: list[str] = []
+    for line in lines[start:]:
+        token = line.strip()
+        if re.fullmatch(r"[A-D]", token):
+            run.append(token)
+            continue
+        if run:
+            break
+    return run
+
+
+def part1_keys_from(lines: list[str]) -> list[str]:
     part1: list[str] = []
     choosing = False
-    for line in sections["I"]:
+    for line in lines:
         if line.strip() == "Chọn":
             choosing = True
             part1 = []
@@ -516,10 +609,36 @@ def parse_answer_tables(rows: list[tuple[str, object]], exam_number_value: int) 
             part1.append(line.strip())
         elif choosing and part1:
             break
+    if part1:
+        return part1
+    for index, line in enumerate(lines):
+        if fold_vi(line) in {"DAPAN", "DA"}:
+            run = letter_run_after(lines, index + 1)
+            if len(run) >= 4:
+                return run
+    return longest_letter_run(lines)
 
+
+def longest_letter_run(lines: list[str]) -> list[str]:
+    best: list[str] = []
+    current: list[str] = []
+    for line in lines:
+        token = line.strip()
+        if re.fullmatch(r"[A-D]", token):
+            current.append(token)
+            continue
+        if len(current) > len(best):
+            best = current
+        current = []
+    if len(current) > len(best):
+        best = current
+    return best
+
+
+def part2_keys_from(lines: list[str]) -> list[str]:
     buckets: dict[str, list[str]] = {"a": [], "b": [], "c": [], "d": []}
     column = None
-    for line in sections["II"]:
+    for line in lines:
         stripped = line.strip()
         inline = re.match(r"^([a-d])\)\s*(Đúng|Sai|Đ|S)\b", stripped, re.IGNORECASE)
         if inline:
@@ -535,14 +654,41 @@ def parse_answer_tables(rows: list[tuple[str, object]], exam_number_value: int) 
             continue
         column = None
     width = max((len(flags) for flags in buckets.values()), default=0)
-    part2 = [
-        "".join(buckets[letter][index] if index < len(buckets[letter]) else "S" for letter in "abcd")
-        for index in range(width)
-    ]
+    if width:
+        return [
+            "".join(buckets[letter][index] if index < len(buckets[letter]) else "S" for letter in "abcd")
+            for index in range(width)
+        ]
+    flags = [tf_flag(line.strip()) for line in lines if re.fullmatch(r"(?i)(Đúng|Sai|Đ|S)", line.strip())]
+    if len(flags) < 4 or len(flags) % 4 != 0:
+        return []
+    return ["".join(flags[index:index + 4]) for index in range(0, len(flags), 4)]
 
+
+def integer_answer(text: str) -> str | None:
+    raw = text.strip().replace(" ", "").replace("–", "-").replace("−", "-")
+    if re.fullmatch(r"-?\d+(?:[.,]\d+)?", raw):
+        return raw
+    return short_answer_token(text)
+
+
+def paired_answer_column(lines: list[str]) -> bool:
+    """Official tables alternate «1 / 2,52 mA / 2 / 0,16 mW». A bare 21 is then a real answer, not an index."""
+    tokens = [line.strip() for line in lines if line.strip()]
+    if len(tokens) < 4 or len(tokens) % 2 != 0:
+        return False
+    indexes = []
+    for index in range(0, len(tokens), 2):
+        if not re.fullmatch(r"\d{1,2}", tokens[index]):
+            return False
+        indexes.append(int(tokens[index]))
+    return indexes == list(range(1, len(indexes) + 1))
+
+
+def part3_keys_from(lines: list[str]) -> list[str]:
     part3: list[str] = []
     choosing = False
-    for line in sections["III"]:
+    for line in lines:
         if line.strip() == "Chọn":
             choosing = True
             part3 = []
@@ -552,7 +698,60 @@ def parse_answer_tables(rows: list[tuple[str, object]], exam_number_value: int) 
             part3.append(token)
         elif choosing and part3:
             break
-    return part1, part2, part3
+    if part3:
+        return part3
+    for index, line in enumerate(lines):
+        if fold_vi(line) != "DAPAN":
+            continue
+        tail = lines[index + 1:]
+        if paired_answer_column(tail):
+            break
+        values = []
+        for follow in tail:
+            token = integer_answer(follow)
+            if token:
+                values.append(token)
+            elif values:
+                break
+        if values:
+            return values
+    values: list[str] = []
+    for line in lines:
+        token = short_answer_token(line)
+        if token:
+            values.append(token)
+    return values
+
+
+def duration_minutes(part1_count: int, group_count: int, part3_count: int) -> int:
+    """Toán 12/4/6 là 90 phút. Lý, Hóa, Sinh, Địa, Sử, Giáo dục, Công nghệ và Ngoại ngữ là 50 phút."""
+    if part1_count == 12 and group_count == 4 and part3_count == 6:
+        return 90
+    return 50
+
+
+def part_iii_points(part1_count: int, group_count: int, part3_count: int) -> float:
+    """Toán (12/4/6) là 0,5 điểm/câu. Lý, Hóa, Sinh, Địa (18/4/6) là 0,25. Sử và Ngoại ngữ không có Phần III."""
+    if part3_count <= 0:
+        return POINTS["III"]
+    remainder = 10 - 0.25 * part1_count - group_count
+    each = remainder / part3_count
+    quarter = round(each * 4) / 4
+    if each > 0 and abs(each - quarter) < 1e-9:
+        return quarter
+    return POINTS["III"]
+
+
+def parse_answer_tables(rows: list[tuple[str, object]], exam_number_value: int) -> tuple[list[str], list[str], list[str]]:
+    sections: dict[str, list[str]] = {"I": [], "II": [], "III": []}
+    current = None
+    for kind, value in answer_rows_for_exam(rows, exam_number_value):
+        if kind == "part":
+            current = str(value)
+            continue
+        if current and kind == "text":
+            sections[current].append(str(value))
+    return part1_keys_from(sections["I"]), part2_keys_from(sections["II"]), part3_keys_from(sections["III"])
 
 
 def save_image(doc: pymupdf.Document, item: dict, dest: Path) -> bool:
@@ -600,6 +799,9 @@ def build_bank(doc: pymupdf.Document, out: Path, questions: list[dict], solution
             grouped[part].sort(key=lambda item: item["number"])
         ordered = grouped["I"] + grouped["II"] + grouped["III"]
         counts = [(part, grouped[part][-1]["number"] if grouped[part] else 0) for part in ("I", "II", "III")]
+        part_counts = (len(grouped["I"]), len(grouped["II"]), len(grouped["III"]))
+        short_points = part_iii_points(*part_counts)
+        minutes = duration_minutes(*part_counts)
         raw_sols = sols_by_exam.get(number, [])
         if raw_sols and all(item.get("part") is None for item in raw_sols):
             mapped_sols = [local for item in raw_sols if (local := local_solution(item, counts)) is not None]
@@ -672,7 +874,7 @@ def build_bank(doc: pymupdf.Document, out: Path, questions: list[dict], solution
                 "choices": [],
                 "answerKey": short_key(sol_text) or (part3_keys[qn - 1] if qn - 1 < len(part3_keys) else ""),
                 "explanation": expl,
-                "points": POINTS[part],
+                "points": short_points,
                 "sortOrder": sort,
             })
             sort += 1
@@ -680,13 +882,17 @@ def build_bank(doc: pymupdf.Document, out: Path, questions: list[dict], solution
             exams.append({
                 "number": number,
                 "title": f"Đề số {number}",
-                "durationMinutes": 90,
+                "durationMinutes": minutes,
                 "questions": items,
             })
     return {
         "title": "Đề đã tải",
         "academicYear": None,
-        "description": "Tải từ file Word. Phần I 0,25 điểm/câu, Phần II chấm theo nhóm 4 ý, Phần III 0,5 điểm/câu.",
+        "description": (
+            "Tổng 10 điểm. Phần I: 0,25/câu. "
+            "Phần II: đúng 1 ý 0,1; 2 ý 0,25; 3 ý 0,5; 4 ý 1,0. "
+            "Phần III: 0,5 (Toán) hoặc 0,25 (Lý, Hóa, Sinh, Địa)."
+        ),
         "exams": exams,
     }
 

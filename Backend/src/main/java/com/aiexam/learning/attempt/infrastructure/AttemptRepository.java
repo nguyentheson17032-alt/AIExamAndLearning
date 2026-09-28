@@ -28,6 +28,8 @@ public interface AttemptRepository extends JpaRepository<Attempt, UUID> {
     @EntityGraph(attributePaths = {"answers", "paper", "paper.paperSet", "user"})
     Optional<Attempt> findByUserIdAndPaperIdAndStatus(UUID userId, UUID paperId, AttemptStatus status);
 
+    boolean existsByUser_IdAndPaper_Id(UUID userId, UUID paperId);
+
     List<Attempt> findByPaper_IdIn(Collection<UUID> paperIds);
 
     void deleteByPaper_IdIn(Collection<UUID> paperIds);

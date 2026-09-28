@@ -1,6 +1,6 @@
 "use server";
 
-import { backendFetch, errorMessage } from "@/lib/backend";
+import { backendFetch, errorMessage, rethrowIfRedirect } from "@/lib/backend";
 import { requireTeacher, requireUser } from "@/lib/guards";
 import type { Attempt, Paper } from "@/lib/types";
 import { revalidatePath } from "next/cache";
@@ -28,6 +28,7 @@ export async function createPaperAction(
     targetEloMax: Number(formData.get("targetEloMax") ?? 1400),
     status: "PUBLISHED",
     questions: questionIds.map((questionId) => ({ questionId, points: 1 })),
+    classroomId: String(formData.get("classroomId") ?? "").trim() || null,
   };
   let paper: Paper;
   try {
@@ -39,6 +40,9 @@ export async function createPaperAction(
     return { error: errorMessage(error, "Could not create paper") };
   }
   revalidatePath("/papers");
+  if (payload.classroomId) {
+    revalidatePath(`/classrooms/${payload.classroomId}`);
+  }
   redirect(`/papers/${paper.id}`);
 }
 
@@ -78,29 +82,8 @@ export async function startAttemptAction(paperId: string): Promise<PaperFormStat
       method: "POST",
     });
   } catch (error) {
+    rethrowIfRedirect(error);
     return { error: errorMessage(error, "Không bắt đầu được đề thi") };
-  }
-  redirect(`/attempts/${attempt.id}`);
-}
-
-export async function startPracticeAction(
-  _prev: PaperFormState,
-  formData: FormData,
-): Promise<PaperFormState> {
-  await requireUser();
-  const payload = {
-    subjectId: String(formData.get("subjectId") ?? ""),
-    questionCount: Number(formData.get("questionCount") ?? 5),
-    durationMinutes: Number(formData.get("durationMinutes") ?? 20),
-  };
-  let attempt: Attempt;
-  try {
-    attempt = await backendFetch<Attempt>("/api/v1/practice/sessions", {
-      method: "POST",
-      body: JSON.stringify(payload),
-    });
-  } catch (error) {
-    return { error: errorMessage(error, "Could not start practice") };
   }
   redirect(`/attempts/${attempt.id}`);
 }

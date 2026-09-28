@@ -57,7 +57,7 @@ public class HeuristicExamAiClient implements ExamAiClient {
             boolean match = sameShortAnswer(answer, question.getAnswerKey());
             BigDecimal score = match ? maxPoints : BigDecimal.ZERO;
             return new GradeResult(match, score.setScale(2, RoundingMode.HALF_UP),
-                    match ? "Matches the answer key" : "Does not match the answer key", MODEL);
+                    match ? "Khớp đáp án" : "Không khớp đáp án", MODEL);
         }
         int length = answer.trim().length();
         BigDecimal ratio = length >= 180 ? new BigDecimal("0.80")
@@ -145,7 +145,33 @@ public class HeuristicExamAiClient implements ExamAiClient {
         }
         Double left = decimal(answer);
         Double right = decimal(key);
-        return left != null && right != null && Math.abs(left - right) < 0.0001;
+        if (left != null && right != null && Math.abs(left - right) < 0.0001) {
+            return true;
+        }
+        Double leftCore = leadingNumber(answer);
+        Double rightCore = leadingNumber(key);
+        return leftCore != null && rightCore != null && Math.abs(leftCore - rightCore) < 0.0001;
+    }
+
+    private Double leadingNumber(String value) {
+        if (value == null) {
+            return null;
+        }
+        String token = value.trim()
+                .replace(" ", "")
+                .replace("−", "-")
+                .replace("–", "-")
+                .replace(",", ".")
+                .replace("%", "");
+        java.util.regex.Matcher matcher = java.util.regex.Pattern.compile("-?\\d+(?:\\.\\d+)?").matcher(token);
+        if (!matcher.find()) {
+            return null;
+        }
+        try {
+            return Double.valueOf(matcher.group());
+        } catch (NumberFormatException ex) {
+            return null;
+        }
     }
 
     private Double decimal(String value) {

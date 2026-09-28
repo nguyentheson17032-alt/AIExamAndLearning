@@ -280,3 +280,24 @@
 ## Phase 43: Practice Progress Numbers
 
 - [x] Number practice and AI progress chips 1 through n+1
+
+## Phase 44: Classroom Schema
+
+- [x] Update ERD.md with classrooms, members, and shared papers
+- [x] Add Flyway migration for classrooms, members, and class papers
+- [x] Create Classroom, ClassroomMember, and ClassroomPaper entities and repositories
+
+## Phase 45: Classroom API
+
+- [x] Create a class and list classes for the teacher or enrolled student
+- [x] Add a student by a unique display name
+- [x] Share the teacher's standalone papers into the class
+- [x] Hide class papers from the public catalog and block outsiders
+- [x] Add tests for display-name matching and class visibility
+
+## Phase 46: Classroom Frontend
+
+- [x] Add class list, create, and detail pages
+- [x] Add a student by display name and share uploaded papers
+- [x] Show class papers to enrolled students
+- [x] Add Classes to navigation

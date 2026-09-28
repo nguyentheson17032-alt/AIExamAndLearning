@@ -9,6 +9,7 @@ import java.util.UUID;
 
 public record EloEventResponse(
         UUID id,
+        UUID attemptId,
         int ratingBefore,
         int ratingAfter,
         int delta,
@@ -19,6 +20,7 @@ public record EloEventResponse(
     public static EloEventResponse from(EloEvent event) {
         return new EloEventResponse(
                 event.getId(),
+                event.getAttempt() == null ? null : event.getAttempt().getId(),
                 event.getRatingBefore(),
                 event.getRatingAfter(),
                 event.getDelta(),

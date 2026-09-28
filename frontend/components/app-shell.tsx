@@ -17,8 +17,7 @@ export function AppShell({
         { href: "/", label: "Home" },
         { href: "/subjects", label: "Subjects" },
         { href: "/papers", label: "Papers" },
-        { href: "/practice", label: "Practice" },
-        { href: "/attempts", label: "Attempts" },
+        { href: "/classrooms", label: "Classes" },
         { href: "/me", label: "Rank" },
         ...(teacher
           ? [{ href: "/questions", label: "Questions" }]

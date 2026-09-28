@@ -4,10 +4,18 @@ import { createPaperAction, type PaperFormState } from "@/lib/paper-actions";
 import { ProblemAlert } from "@/components/problem-alert";
 import { SelectField, TextAreaField, TextField } from "@/components/fields";
 import { SubmitButton } from "@/components/submit-button";
-import type { Question, Subject } from "@/lib/types";
+import type { ClassroomSummary, Question, Subject } from "@/lib/types";
 import { useActionState } from "react";
 
-export function PaperCreateForm({ subjects, questions }: { subjects: Subject[]; questions: Question[] }) {
+export function PaperCreateForm({
+  subjects,
+  questions,
+  classrooms = [],
+}: {
+  subjects: Subject[];
+  questions: Question[];
+  classrooms?: ClassroomSummary[];
+}) {
   const [state, action] = useActionState(createPaperAction, null as PaperFormState);
   return (
     <form action={action} className="space-y-4 rounded-xl border border-line bg-card p-6">
@@ -28,6 +36,16 @@ export function PaperCreateForm({ subjects, questions }: { subjects: Subject[]; 
         ]}
       />
       <TextAreaField name="description" label="Description" />
+      {classrooms.length > 0 ? (
+        <SelectField
+          name="classroomId"
+          label="Lớp học"
+          options={[
+            { value: "", label: "Không đưa vào lớp" },
+            ...classrooms.map((classroom) => ({ value: classroom.id, label: classroom.name })),
+          ]}
+        />
+      ) : null}
       <TextField name="durationMinutes" label="Duration (minutes)" type="number" defaultValue={45} min={1} max={300} required />
       <div className="grid gap-4 sm:grid-cols-2">
         <TextField name="targetEloMin" label="Elo min" type="number" defaultValue={800} min={100} required />

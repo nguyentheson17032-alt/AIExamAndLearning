@@ -18,7 +18,7 @@ const geistMono = Geist_Mono({
 
 export const metadata: Metadata = {
   title: "Exam Warehouse",
-  description: "Question bank, Elo practice, and AI-assisted exams",
+  description: "Question bank, papers, and AI-assisted exams",
 };
 
 export const dynamic = "force-dynamic";

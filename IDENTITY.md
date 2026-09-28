@@ -1400,3 +1400,106 @@ Started: 2026-09-27
 - Exam-step tests passed
 - Browser: a 3-question Elo practice shows progress chips 1, 2, 3 and chip 3 opens câu 3
 - Planned commit: `fix(practice): number progress chips from 1`
+
+## Phase 44: Classroom Schema
+
+**Status:** completed
+
+Started: 2026-09-28
+
+### Work
+
+- Added CLASSROOM, CLASSROOM_MEMBER, and CLASSROOM_PAPER to ERD.md
+- Added Flyway V9 and JPA entities plus repositories
+
+### User prompts
+
+1. > bây h tôi đang định làm thêm lớp học để giáo viên có thế add học sinh qua display name, khi học sinh vào lớp thì mới thấy tất cả các bài mà giáo viên tải lên
+
+### Skills used
+
+- erd
+- identity
+- project-todo
+
+### Rules used
+
+- project-todo.mdc
+- identity.mdc
+- erd.mdc
+- karpathy-guidelines.mdc
+- springboot.mdc
+
+### Outcome
+
+- Schema matches ERD.md
+- Planned commit: `feat(classroom): add class membership schema`
+
+## Phase 45: Classroom API
+
+**Status:** completed
+
+Started: 2026-09-28
+
+### Work
+
+- Teachers create a class and add one enabled student by display name
+- Sharing standalone papers hides them from the public catalog
+- Class members, the teacher, and admins can open those papers; outsiders cannot start them
+- Duplicate or unknown display names are rejected
+
+### User prompts
+
+1. > bây h tôi đang định làm thêm lớp học để giáo viên có thế add học sinh qua display name, khi học sinh vào lớp thì mới thấy tất cả các bài mà giáo viên tải lên
+
+### Skills used
+
+- identity
+- project-todo
+
+### Rules used
+
+- project-todo.mdc
+- identity.mdc
+- karpathy-guidelines.mdc
+- springboot.mdc
+
+### Outcome
+
+- ClassroomServiceTest passed
+- Planned commit: `feat(classroom): share papers with enrolled students`
+
+## Phase 46: Classroom Frontend
+
+**Status:** completed
+
+Started: 2026-09-28
+
+### Work
+
+- Added class list, create, and detail pages
+- Teacher adds a student by display name and shares created papers into the class
+- Students open a class to see those papers
+- Added Classes to the nav and home page
+
+### User prompts
+
+1. > bây h tôi đang định làm thêm lớp học để giáo viên có thế add học sinh qua display name, khi học sinh vào lớp thì mới thấy tất cả các bài mà giáo viên tải lên
+
+### Skills used
+
+- identity
+- project-todo
+
+### Rules used
+
+- project-todo.mdc
+- identity.mdc
+- karpathy-guidelines.mdc
+- react.mdc
+
+### Outcome
+
+- Frontend typecheck reported only existing errors outside this change
+- Browser was not run; no dev server was up
+- Planned commit: `feat(classroom): add class pages for teachers and students`

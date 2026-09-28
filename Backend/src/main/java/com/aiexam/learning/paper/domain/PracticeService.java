@@ -66,7 +66,8 @@ public class PracticeService {
                 ContentStatus.PUBLISHED,
                 pool.stream()
                         .map(question -> new PaperQuestionRequest(question.getId(), BigDecimal.ONE))
-                        .toList()
+                        .toList(),
+                null
         ));
         return attemptService.start(userId, paper.id());
     }

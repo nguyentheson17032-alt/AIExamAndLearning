@@ -6,6 +6,7 @@ import com.aiexam.learning.attempt.api.AttemptResponse;
 import com.aiexam.learning.attempt.api.AttemptSolutionResponse;
 import com.aiexam.learning.attempt.api.AttemptSubmitRequest;
 import com.aiexam.learning.attempt.infrastructure.AttemptRepository;
+import com.aiexam.learning.classroom.domain.ClassroomAccess;
 import com.aiexam.learning.common.api.PageResponse;
 import com.aiexam.learning.common.exception.BusinessRuleException;
 import com.aiexam.learning.common.exception.ResourceNotFoundException;
@@ -46,11 +47,13 @@ public class AttemptService {
     private final UserRepository userRepository;
     private final EloService eloService;
     private final ExamAiClient examAiClient;
+    private final ClassroomAccess classroomAccess;
 
     @Transactional
     public AttemptResponse start(UUID userId, UUID paperId) {
         User user = user(userId);
         Paper paper = paperService.getPaper(paperId);
+        classroomAccess.requireCanStart(user, paper);
         if (paper.getStatus() != ContentStatus.PUBLISHED) {
             throw new BusinessRuleException("PAPER_NOT_PUBLISHED", "Paper is not published");
         }

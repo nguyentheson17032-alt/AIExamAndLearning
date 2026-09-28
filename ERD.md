@@ -2,13 +2,18 @@
 
 ## Overview
 
-PostgreSQL schema for the exam warehouse: users with Elo/rank, a question bank, paper sets (bộ đề), papers (exams, assignments, practice sets), attempts, Elo history, AI classification, AI generation jobs, and PNG snapshots for TS10 stems/solutions.
+PostgreSQL schema for the exam warehouse: users with Elo/rank, classrooms, a question bank, paper sets (bộ đề), papers (exams, assignments, practice sets), attempts, Elo history, AI classification, AI generation jobs, and PNG snapshots for TS10 stems/solutions.
 
 ## Diagram
 
 ```mermaid
 erDiagram
     USER ||--o{ REFRESH_TOKEN : owns
+    USER ||--o{ CLASSROOM : teaches
+    CLASSROOM ||--o{ CLASSROOM_MEMBER : enrolls
+    USER ||--o{ CLASSROOM_MEMBER : joins
+    CLASSROOM ||--o{ CLASSROOM_PAPER : shares
+    PAPER ||--o{ CLASSROOM_PAPER : posted_to
     USER ||--o{ QUESTION : authors
     USER ||--o{ PAPER : authors
     USER ||--o{ ATTEMPT : takes
@@ -55,6 +60,28 @@ erDiagram
         datetime expiresAt
         datetime revokedAt
         uuid replacedById
+        datetime createdAt
+    }
+
+    CLASSROOM {
+        uuid id PK
+        uuid teacherId FK
+        string name
+        datetime createdAt
+        datetime updatedAt
+    }
+
+    CLASSROOM_MEMBER {
+        uuid id PK
+        uuid classroomId FK
+        uuid studentId FK
+        datetime createdAt
+    }
+
+    CLASSROOM_PAPER {
+        uuid id PK
+        uuid classroomId FK
+        uuid paperId FK
         datetime createdAt
     }
 
@@ -358,6 +385,38 @@ erDiagram
 | created_at | datetime | NOT NULL | Created time |
 | updated_at | datetime | NOT NULL | Updated time |
 
+### CLASSROOM
+
+| Column | Type | Constraints | Description |
+| --- | --- | --- | --- |
+| id | UUID | PK | Unique identifier |
+| teacher_id | UUID | FK USER, NOT NULL | Teacher who owns the class |
+| name | string | NOT NULL | Class name |
+| created_at | datetime | NOT NULL | Created time |
+| updated_at | datetime | NOT NULL | Updated time |
+
+### CLASSROOM_MEMBER
+
+| Column | Type | Constraints | Description |
+| --- | --- | --- | --- |
+| id | UUID | PK | Unique identifier |
+| classroom_id | UUID | FK CLASSROOM, NOT NULL | Class |
+| student_id | UUID | FK USER, NOT NULL | Enrolled student |
+| created_at | datetime | NOT NULL | When the teacher added the student |
+
+Unique: `(classroom_id, student_id)`.
+
+### CLASSROOM_PAPER
+
+| Column | Type | Constraints | Description |
+| --- | --- | --- | --- |
+| id | UUID | PK | Unique identifier |
+| classroom_id | UUID | FK CLASSROOM, NOT NULL | Class that can see the paper |
+| paper_id | UUID | FK PAPER, NOT NULL | Paper shared with the class |
+| created_at | datetime | NOT NULL | When the teacher shared the paper |
+
+Unique: `(classroom_id, paper_id)`. A paper linked here is hidden from the public catalog and opens only for the class teacher, enrolled students, the author, and admins.
+
 ### PAPER
 
 | Column | Type | Constraints | Description |
@@ -458,6 +517,11 @@ Unique: `(paper_id, question_id)`.
 | From | To | Cardinality | Description |
 | --- | --- | --- | --- |
 | USER | REFRESH_TOKEN | 1:N | A user owns many refresh tokens |
+| USER | CLASSROOM | 1:N | A teacher owns many classes |
+| CLASSROOM | CLASSROOM_MEMBER | 1:N | A class enrolls many students |
+| USER | CLASSROOM_MEMBER | 1:N | A student joins many classes |
+| CLASSROOM | CLASSROOM_PAPER | 1:N | A class shares many papers |
+| PAPER | CLASSROOM_PAPER | 1:N | A paper may be shared with many classes |
 | USER | QUESTION | 1:N | A user authors many questions |
 | USER | PAPER | 1:N | A user authors many papers |
 | USER | PAPER_SET | 1:N | A user authors many exam sets |
@@ -488,7 +552,9 @@ Unique: `(paper_id, question_id)`.
 - IDs are UUID. Enums are stored as VARCHAR (`STRING` in JPA).
 - Rank codes from Elo: `BRONZE` < 1000, `SILVER` 1000–1199, `GOLD` 1200–1399, `PLATINUM` 1400–1599, `DIAMOND` ≥ 1600. New users start at Elo 1000 / `SILVER`.
 - Index foreign keys and list filters: `users.email`, `questions.subject_id`, `questions.elo_rating`, `papers.kind`, `papers.target_elo_min/max`, `attempts.user_id`, `elo_events.user_id`.
-- Unique: `users.email`, `subjects.code`, `refresh_tokens.token_hash`, `paper_questions(paper_id, question_id)`, `papers(paper_set_id, exam_number)` when `paper_set_id` is set, `question_images.filename`, `question_image_refs(question_id, role)`.
+- Unique: `users.email`, `subjects.code`, `refresh_tokens.token_hash`, `paper_questions(paper_id, question_id)`, `papers(paper_set_id, exam_number)` when `paper_set_id` is set, `question_images.filename`, `question_image_refs(question_id, role)`, `classroom_members(classroom_id, student_id)`, `classroom_papers(classroom_id, paper_id)`.
+- `users.display_name` is not unique. Adding a student matches one enabled `STUDENT` by display name, case-insensitive. Zero or several matches are rejected.
+- A teacher can share their own standalone papers and Word-uploaded exam sets into a class, and can remove those links. A paper with a `CLASSROOM_PAPER` row is class-only until the last link is removed.
 - TS10 cropped PNGs live in `QUESTION_IMAGE.bytes`. `QUESTION_IMAGE_REF` attaches them as STEM or EXPLANATION so listing papers does not load blobs and so the `questions` table does not need new columns. Part II ý a–d share one stem snapshot and one lời giải snapshot.
 - `PAPER_QUESTION.section_code` values: `PART_I` (12 multiple-choice × 0.25 = 3.0), `PART_II` (4 đúng/sai groups, official 0.1/0.25/0.5/1.0 scale, max 4.0), `PART_III` (6 short answers × 0.5 = 3.0). TS10 papers total 10 points. Elo uses `score / 10`.
 - `PAPER_QUESTION.group_key` lets the take-exam UI show one Part II câu (four ý a–d) as a single step.

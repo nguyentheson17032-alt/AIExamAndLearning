@@ -12,7 +12,7 @@ async function missingAttempt<T>(load: () => Promise<T>): Promise<T> {
     return await load();
   } catch (error) {
     if (error instanceof ApiError && error.status === 404) {
-      redirect("/attempts");
+      redirect("/me");
     }
     throw error;
   }

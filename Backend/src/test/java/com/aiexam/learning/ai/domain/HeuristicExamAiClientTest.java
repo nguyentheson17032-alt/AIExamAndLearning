@@ -36,6 +36,32 @@ class HeuristicExamAiClientTest {
     }
 
     @Test
+    void grade_shortAnswer_ignoresUnitOnTheKey() {
+        Question question = sample(QuestionType.SHORT_ANSWER, "Dòng điện là bao nhiêu mA?");
+        question.updateContent(
+                question.getStem(),
+                "2,52 mA",
+                question.getExplanation(),
+                question.getDifficulty(),
+                question.getEloRating(),
+                question.getBloomLevel(),
+                question.getStatus()
+        );
+        assertThat(client.grade(question, "2,52", new BigDecimal("0.25")).correct()).isTrue();
+        assertThat(client.grade(question, "11,6", new BigDecimal("0.25")).correct()).isFalse();
+        question.updateContent(
+                question.getStem(),
+                "11,6%",
+                question.getExplanation(),
+                question.getDifficulty(),
+                question.getEloRating(),
+                question.getBloomLevel(),
+                question.getStatus()
+        );
+        assertThat(client.grade(question, "11,6%", new BigDecimal("0.25")).correct()).isTrue();
+    }
+
+    @Test
     void grade_shortAnswer_acceptsCommaAndDot() {
         Question question = sample(QuestionType.SHORT_ANSWER, "Xác suất?");
         question.updateContent(

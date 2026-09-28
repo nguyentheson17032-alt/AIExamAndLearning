@@ -49,12 +49,12 @@ public class PaperController {
             @RequestParam(required = false) ContentStatus status,
             Pageable pageable
     ) {
-        return paperService.list(subjectId, kind, status, pageable);
+        return paperService.list(CurrentUser.require().getUser(), subjectId, kind, status, pageable);
     }
 
     @GetMapping("/papers/{id}")
     public PaperResponse get(@PathVariable UUID id) {
-        return paperService.get(id, CurrentUser.teacherOrAdmin());
+        return paperService.getForReader(CurrentUser.require().getUser(), id, CurrentUser.teacherOrAdmin());
     }
 
     @PostMapping("/papers/{id}/attempts")

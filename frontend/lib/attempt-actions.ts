@@ -1,6 +1,6 @@
 "use server";
 
-import { backendFetch, errorMessage } from "@/lib/backend";
+import { backendFetch, errorMessage, rethrowIfRedirect } from "@/lib/backend";
 import { requireUser } from "@/lib/guards";
 import { getSessionUser, persistSessionUser } from "@/lib/session";
 import type { Attempt, UserProfile } from "@/lib/types";
@@ -46,7 +46,8 @@ export async function submitAttemptAction(
       });
     }
   } catch (error) {
-    return { error: errorMessage(error, "Submit failed") };
+    rethrowIfRedirect(error);
+    return { error: errorMessage(error, "Không nộp được bài.") };
   }
   revalidatePath("/", "layout");
   revalidatePath("/attempts");

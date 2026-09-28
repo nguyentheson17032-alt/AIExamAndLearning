@@ -34,9 +34,11 @@ public class SecurityConfig {
                 .sessionManagement(session -> session.sessionCreationPolicy(SessionCreationPolicy.STATELESS))
                 .authorizeHttpRequests(auth -> auth
                         .requestMatchers("/api/v1/auth/**", "/actuator/health").permitAll()
-                        .requestMatchers(HttpMethod.POST, "/api/v1/subjects/**", "/api/v1/questions/**", "/api/v1/papers", "/api/v1/papers/generate", "/api/v1/paper-sets/import")
+                        .requestMatchers(HttpMethod.POST, "/api/v1/subjects/**", "/api/v1/questions/**", "/api/v1/papers", "/api/v1/papers/generate", "/api/v1/paper-sets/import", "/api/v1/classrooms", "/api/v1/classrooms/*/members", "/api/v1/classrooms/*/papers")
                         .hasAnyRole("TEACHER", "ADMIN")
-                        .requestMatchers(HttpMethod.PUT, "/api/v1/questions/**", "/api/v1/papers/**")
+                        .requestMatchers(HttpMethod.DELETE, "/api/v1/classrooms/**")
+                        .hasAnyRole("TEACHER", "ADMIN")
+                        .requestMatchers(HttpMethod.PUT, "/api/v1/questions/**", "/api/v1/papers/**", "/api/v1/classrooms/**")
                         .hasAnyRole("TEACHER", "ADMIN")
                         .requestMatchers(HttpMethod.DELETE, "/api/v1/questions/**")
                         .hasAnyRole("TEACHER", "ADMIN")

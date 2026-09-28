@@ -110,6 +110,52 @@ export type PaperItem = {
   question: Question;
 };
 
+export type ClassroomSummary = {
+  id: string;
+  name: string;
+  teacherId: string;
+  teacherName: string;
+  memberCount: number;
+  createdAt: string;
+};
+
+export type ClassroomMember = {
+  studentId: string;
+  displayName: string;
+  joinedAt: string | null;
+};
+
+export type ClassPaper = {
+  id: string;
+  subjectId: string;
+  title: string;
+  kind: PaperKind;
+  durationMinutes: number;
+  status: ContentStatus;
+};
+
+export type SharePaperSetOption = {
+  id: string;
+  title: string;
+  academicYear: string | null;
+  paperCount: number;
+};
+
+export type ShareOptions = {
+  papers: ClassPaper[];
+  paperSets: SharePaperSetOption[];
+};
+
+export type ClassroomDetail = {
+  id: string;
+  name: string;
+  teacherId: string;
+  teacherName: string;
+  teacher: boolean;
+  members: ClassroomMember[];
+  papers: ClassPaper[];
+};
+
 export type Paper = {
   id: string;
   authorId: string;
@@ -179,6 +225,7 @@ export type Attempt = {
 
 export type EloEvent = {
   id: string;
+  attemptId: string | null;
   ratingBefore: number;
   ratingAfter: number;
   delta: number;

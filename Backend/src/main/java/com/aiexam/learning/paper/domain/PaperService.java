@@ -2,6 +2,9 @@ package com.aiexam.learning.paper.domain;
 
 import com.aiexam.learning.catalog.domain.CatalogService;
 import com.aiexam.learning.catalog.domain.Subject;
+import com.aiexam.learning.classroom.domain.ClassroomAccess;
+import com.aiexam.learning.classroom.domain.ClassroomService;
+import com.aiexam.learning.classroom.infrastructure.ClassroomMemberRepository;
 import com.aiexam.learning.common.api.PageResponse;
 import com.aiexam.learning.common.exception.BusinessRuleException;
 import com.aiexam.learning.common.exception.ResourceNotFoundException;
@@ -19,6 +22,7 @@ import com.aiexam.learning.question.infrastructure.QuestionRepository;
 import com.aiexam.learning.user.domain.User;
 import com.aiexam.learning.user.infrastructure.UserRepository;
 import lombok.RequiredArgsConstructor;
+import org.springframework.data.domain.Page;
 import org.springframework.data.domain.Pageable;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
@@ -42,6 +46,9 @@ public class PaperService {
     private final QuestionService questionService;
     private final CatalogService catalogService;
     private final UserRepository userRepository;
+    private final ClassroomService classroomService;
+    private final ClassroomAccess classroomAccess;
+    private final ClassroomMemberRepository classroomMemberRepository;
 
     @Transactional
     public PaperResponse create(UUID authorId, PaperCreateRequest request) {
@@ -65,7 +72,11 @@ public class PaperService {
                 status
         );
         addQuestions(paper, request.questions());
-        return PaperResponse.from(paperRepository.save(paper), true);
+        Paper saved = paperRepository.save(paper);
+        if (request.classroomId() != null) {
+            classroomService.share(authorId, request.classroomId(), saved.getId());
+        }
+        return PaperResponse.from(saved, true);
     }
 
     @Transactional
@@ -243,19 +254,58 @@ public class PaperService {
         return PaperResponse.from(getPaper(id), includeAnswer);
     }
 
+    public PaperResponse getForReader(User reader, UUID id, boolean includeAnswer) {
+        Paper paper = getPaper(id);
+        classroomAccess.requireCanRead(reader, paper);
+        return PaperResponse.from(paper, includeAnswer);
+    }
+
     public Paper getPaper(UUID id) {
         return paperRepository.findWithItemsById(id)
                 .orElseThrow(() -> new ResourceNotFoundException("PAPER_NOT_FOUND", "Paper not found: " + id));
     }
 
-    public PageResponse<PaperResponse> list(UUID subjectId, PaperKind kind, ContentStatus status, Pageable pageable) {
+    public PageResponse<PaperResponse> list(User viewer, UUID subjectId, PaperKind kind, ContentStatus status, Pageable pageable) {
         ContentStatus filter = status == null ? ContentStatus.PUBLISHED : status;
-        var page = kind != null
-                ? paperRepository.findByKindAndStatus(kind, filter, pageable)
-                : subjectId != null
-                ? paperRepository.findBySubjectIdAndStatus(subjectId, filter, pageable)
-                : paperRepository.findByStatus(filter, pageable);
+        Page<Paper> page = switch (viewer.getRole()) {
+            case STUDENT -> sharedWithStudent(viewer.getId(), subjectId, kind, filter, pageable);
+            case TEACHER -> visibleToTeacher(viewer.getId(), subjectId, kind, filter, pageable);
+            case ADMIN -> allPublished(subjectId, kind, filter, pageable);
+        };
         return PageResponse.from(page.map(paper -> PaperResponse.from(paper, false)));
+    }
+
+    private Page<Paper> sharedWithStudent(UUID studentId, UUID subjectId, PaperKind kind, ContentStatus status, Pageable pageable) {
+        if (!classroomMemberRepository.existsByStudent_Id(studentId)) {
+            return Page.empty(pageable);
+        }
+        if (kind != null) {
+            return paperRepository.findSharedWithStudentByKindAndStatus(studentId, kind, status, pageable);
+        }
+        if (subjectId != null) {
+            return paperRepository.findSharedWithStudentBySubjectIdAndStatus(studentId, subjectId, status, pageable);
+        }
+        return paperRepository.findSharedWithStudentByStatus(studentId, status, pageable);
+    }
+
+    private Page<Paper> visibleToTeacher(UUID teacherId, UUID subjectId, PaperKind kind, ContentStatus status, Pageable pageable) {
+        if (kind != null) {
+            return paperRepository.findVisibleToTeacherByKindAndStatus(teacherId, kind, status, pageable);
+        }
+        if (subjectId != null) {
+            return paperRepository.findVisibleToTeacherBySubjectIdAndStatus(teacherId, subjectId, status, pageable);
+        }
+        return paperRepository.findVisibleToTeacherByStatus(teacherId, status, pageable);
+    }
+
+    private Page<Paper> allPublished(UUID subjectId, PaperKind kind, ContentStatus status, Pageable pageable) {
+        if (kind != null) {
+            return paperRepository.findByKindAndStatus(kind, status, pageable);
+        }
+        if (subjectId != null) {
+            return paperRepository.findBySubjectIdAndStatus(subjectId, status, pageable);
+        }
+        return paperRepository.findByStatus(status, pageable);
     }
 
     private List<BankPracticePicker.Unit> pickBankUnits(UUID subjectId, int questionCount, int preferredMin, int preferredMax) {

@@ -24,5 +24,6 @@ public record PaperCreateRequest(
         @NotNull @Min(100) Integer targetEloMin,
         @NotNull @Min(100) Integer targetEloMax,
         ContentStatus status,
-        @NotEmpty @Valid List<PaperQuestionRequest> questions
+        @NotEmpty @Valid List<PaperQuestionRequest> questions,
+        UUID classroomId
 ) {}

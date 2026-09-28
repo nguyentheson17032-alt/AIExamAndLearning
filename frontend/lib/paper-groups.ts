@@ -59,6 +59,10 @@ export function paperGroupId(paper: GroupablePaper, setTitle: string | null): Pa
   return "question";
 }
 
+export function setTitlesById(sets: { id: string; title: string; description: string | null }[]): Map<string, string> {
+  return new Map(sets.map((set) => [set.id, `${set.title} ${set.description ?? ""}`.trim()]));
+}
+
 export function groupPapers(papers: Paper[], setTitleById: Map<string, string>): Record<PaperGroupId, Paper[]> {
   const grouped: Record<PaperGroupId, Paper[]> = {
     admission: [],

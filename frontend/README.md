@@ -42,4 +42,4 @@ npm test
 - Question bank, create, JSON upload, archive, AI classify/similar
 - Papers: create, Elo generate, AI practice paper
 - Start attempt, take exam, submit, results
-- Elo practice sessions and rank history
+- AI practice papers and rank history

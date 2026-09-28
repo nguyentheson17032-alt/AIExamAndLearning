@@ -2,25 +2,45 @@ import { EmptyState } from "@/components/empty-state";
 import { PageHeader } from "@/components/page-header";
 import { backendFetch } from "@/lib/backend";
 import { requireUser } from "@/lib/guards";
-import { groupPapers, paperGroupById, paperOrderLabel } from "@/lib/paper-groups";
-import type { PageResponse, Paper, PaperSet } from "@/lib/types";
+import { groupPapers, paperGroupById, paperOrderLabel, setTitlesById } from "@/lib/paper-groups";
+import { isTeacher } from "@/lib/session";
+import type { ClassroomSummary, PageResponse, Paper, PaperSet } from "@/lib/types";
 import Link from "next/link";
 import { notFound } from "next/navigation";
 
-export default async function PaperGroupPage({ params }: { params: Promise<{ group: string }> }) {
-  await requireUser();
+export default async function PaperGroupPage({
+  params,
+  searchParams,
+}: {
+  params: Promise<{ group: string }>;
+  searchParams: Promise<{ subjectId?: string }>;
+}) {
+  const user = await requireUser();
+  const teacher = isTeacher(user);
   const { group: groupId } = await params;
+  const { subjectId } = await searchParams;
   const group = paperGroupById(groupId);
   if (!group) {
     notFound();
+  }
+
+  const classrooms = teacher ? [] : await backendFetch<ClassroomSummary[]>("/api/v1/classrooms");
+  if (!teacher && classrooms.length === 0) {
+    return (
+      <>
+        <PageHeader title={group.title} description={group.description} />
+        <EmptyState title="Chưa có lớp" description="Khi giáo viên thêm bạn vào lớp, bài sẽ hiện ở đây." />
+      </>
+    );
   }
 
   const [page, sets] = await Promise.all([
     backendFetch<PageResponse<Paper>>("/api/v1/papers?size=200"),
     backendFetch<PaperSet[]>("/api/v1/paper-sets"),
   ]);
-  const setTitleById = new Map(sets.map((set) => [set.id, `${set.title} ${set.description ?? ""}`]));
-  const papers = groupPapers(page.content, setTitleById)[group.id];
+  const papers = groupPapers(page.content, setTitlesById(sets))[group.id].filter((paper) =>
+    subjectId ? paper.subjectId === subjectId : true,
+  );
 
   return (
     <>

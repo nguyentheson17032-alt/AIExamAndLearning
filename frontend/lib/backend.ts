@@ -2,10 +2,44 @@ import { headers } from "next/headers";
 import { redirect } from "next/navigation";
 import { problemMessage, readProblem } from "./problem";
 import { safeInternalPath } from "./safe-path";
-import { getAccessToken, getRefreshToken } from "./session";
+import { getAccessToken, getRefreshToken, persistAuth } from "./session";
 import type { AuthResponse } from "./types";
 
 export const BACKEND_URL = process.env.BACKEND_URL ?? "http://localhost:8080";
+
+let refreshInFlight: Promise<string | null> | null = null;
+
+function refreshAccessToken(): Promise<string | null> {
+  if (!refreshInFlight) {
+    refreshInFlight = requestNewAccessToken().finally(() => {
+      refreshInFlight = null;
+    });
+  }
+  return refreshInFlight;
+}
+
+async function requestNewAccessToken(): Promise<string | null> {
+  const refreshToken = await getRefreshToken();
+  if (!refreshToken) {
+    return null;
+  }
+  try {
+    const response = await fetch(`${BACKEND_URL}/api/v1/auth/refresh`, {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({ refreshToken }),
+      cache: "no-store",
+    });
+    if (!response.ok) {
+      return null;
+    }
+    const auth = (await response.json()) as AuthResponse;
+    await persistAuth(auth);
+    return auth.accessToken;
+  } catch {
+    return null;
+  }
+}
 
 function isNextRedirect(error: unknown): boolean {
   return (
@@ -43,6 +77,7 @@ export class ApiError extends Error {
 }
 
 export function errorMessage(error: unknown, fallback = "Request failed"): string {
+  rethrowIfRedirect(error);
   if (error instanceof ApiError) {
     return error.detail || error.title || fallback;
   }
@@ -52,12 +87,12 @@ export function errorMessage(error: unknown, fallback = "Request failed"): strin
   return fallback;
 }
 
-export async function backendFetch<T>(path: string, init: RequestInit = {}): Promise<T> {
+export async function backendFetch<T>(path: string, init: RequestInit = {}, bearer?: string): Promise<T> {
   const requestHeaders = new Headers(init.headers);
   if (init.body && !(init.body instanceof FormData) && !requestHeaders.has("Content-Type")) {
     requestHeaders.set("Content-Type", "application/json");
   }
-  const token = await getAccessToken();
+  const token = bearer ?? (await getAccessToken());
   if (token) {
     requestHeaders.set("Authorization", `Bearer ${token}`);
   }
@@ -69,6 +104,12 @@ export async function backendFetch<T>(path: string, init: RequestInit = {}): Pro
   });
 
   if (response.status === 401) {
+    if (bearer === undefined) {
+      const refreshed = await refreshAccessToken();
+      if (refreshed) {
+        return backendFetch(path, init, refreshed);
+      }
+    }
     await redirectForUnauthorized();
   }
 
