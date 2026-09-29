@@ -556,7 +556,7 @@ Unique: `(paper_id, question_id)`.
 - `users.display_name` is not unique. Adding a student matches one enabled `STUDENT` by display name, case-insensitive. Zero or several matches are rejected.
 - A teacher can share their own standalone papers and Word-uploaded exam sets into a class, and can remove those links. A paper with a `CLASSROOM_PAPER` row is class-only until the last link is removed.
 - TS10 cropped PNGs live in `QUESTION_IMAGE.bytes`. `QUESTION_IMAGE_REF` attaches them as STEM or EXPLANATION so listing papers does not load blobs and so the `questions` table does not need new columns. Part II ý a–d share one stem snapshot and one lời giải snapshot.
-- `PAPER_QUESTION.section_code` values: `PART_I` (12 multiple-choice × 0.25 = 3.0), `PART_II` (4 đúng/sai groups, official 0.1/0.25/0.5/1.0 scale, max 4.0), `PART_III` (6 short answers × 0.5 = 3.0). TS10 papers total 10 points. Elo uses `score / 10`.
+- `PAPER_QUESTION.section_code` values: `PART_I` (12 multiple-choice × 0.25 = 3.0), `PART_II` (4 đúng/sai groups, official 0.1/0.25/0.5/1.0 scale, max 4.0), `PART_III` (6 short answers × 0.5 = 3.0). TS10 papers total 10 points. Elo uses `score / 10` against the midpoint of `papers.target_elo_min` and `papers.target_elo_max`.
 - `PAPER_QUESTION.group_key` lets the take-exam UI show one Part II câu (four ý a–d) as a single step.
 - Deleting a USER is not supported in v1 (accounts are disabled). Deleting a PAPER cascades to PAPER_QUESTION. Deleting a QUESTION that appears in papers is rejected at the service layer.
 - `QUESTION_CLASSIFICATION.tags` is a JSON array stored as TEXT.

@@ -315,3 +315,8 @@
 - [x] Advance the create-exam form to the next part when the current part is full
 - [x] Set part counts and duration by subject group
 - [x] Add tests for the subject exam rules
+
+## Phase 49: Exam Elo
+
+- [x] Grade every exam with one Elo update against the paper's target midpoint
+- [x] Keep a rating floor of 100 and cover the 2.45/10 case in tests

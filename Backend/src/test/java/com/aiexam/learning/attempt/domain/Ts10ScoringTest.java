@@ -24,15 +24,7 @@ class Ts10ScoringTest {
                 .isCloseTo(0.85, within(0.0001));
         assertThat(Ts10Scoring.eloScore(BigDecimal.ZERO, Ts10Scoring.MAX_SCORE)).isZero();
         assertThat(Ts10Scoring.eloScore(Ts10Scoring.MAX_SCORE, Ts10Scoring.MAX_SCORE)).isEqualTo(1.0);
-    }
-
-    @Test
-    void eloDelta_followsAwardedScore() {
-        assertThat(Ts10Scoring.eloDelta(new BigDecimal("10.00"))).isEqualTo(10);
-        assertThat(Ts10Scoring.eloDelta(new BigDecimal("9.00"))).isEqualTo(9);
-        assertThat(Ts10Scoring.eloDelta(new BigDecimal("8.50"))).isEqualTo(8);
-        assertThat(Ts10Scoring.eloDelta(new BigDecimal("7.25"))).isEqualTo(7);
-        assertThat(Ts10Scoring.eloDelta(new BigDecimal("0.25"))).isZero();
-        assertThat(Ts10Scoring.eloDelta(BigDecimal.ZERO)).isZero();
+        assertThat(Ts10Scoring.eloScore(new BigDecimal("2.45"), Ts10Scoring.MAX_SCORE))
+                .isCloseTo(0.245, within(0.0001));
     }
 }

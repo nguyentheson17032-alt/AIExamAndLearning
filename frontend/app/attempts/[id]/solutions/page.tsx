@@ -16,7 +16,7 @@ export default async function AttemptSolutionsPage({ params }: { params: Promise
     <>
       <PageHeader
         title={`Lời giải · ${paper.title}`}
-        description={`${attempt.score ?? "—"} / ${attempt.maxScore ?? "—"} · Elo ${attempt.eloBefore ?? "—"} → ${attempt.eloAfter ?? "—"}${attempt.eloDelta != null ? ` (+${attempt.eloDelta} theo điểm)` : ""}`}
+        description={`${attempt.score ?? "—"} / ${attempt.maxScore ?? "—"} · Elo ${attempt.eloBefore ?? "—"} → ${attempt.eloAfter ?? "—"}${attempt.eloDelta != null ? ` (${attempt.eloDelta > 0 ? "+" : ""}${attempt.eloDelta})` : ""}`}
       >
         <Link href={`/attempts/${id}`} className="rounded-md border border-line px-4 py-2 text-sm">
           Về kết quả

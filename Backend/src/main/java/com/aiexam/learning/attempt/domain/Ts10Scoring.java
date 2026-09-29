@@ -25,11 +25,4 @@ public final class Ts10Scoring {
         BigDecimal divisor = max == null || max.signum() == 0 ? MAX_SCORE : max;
         return awarded.divide(divisor, 4, RoundingMode.HALF_UP).doubleValue();
     }
-
-    public static int eloDelta(BigDecimal awarded) {
-        if (awarded == null || awarded.signum() <= 0) {
-            return 0;
-        }
-        return awarded.setScale(0, RoundingMode.DOWN).intValue();
-    }
 }

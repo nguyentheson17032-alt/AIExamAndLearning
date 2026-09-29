@@ -24,16 +24,7 @@ public class EloService {
     @Transactional
     public EloEvent applyAttemptResult(User user, Attempt attempt, int paperElo, double scoreRatio) {
         int before = user.getEloRating();
-        int after = EloCalculator.nextRating(before, paperElo, clamp(scoreRatio), eloProperties.kFactor());
-        user.applyElo(after);
-        EloEvent event = EloEvent.record(user, attempt, null, before, after, EloReason.ATTEMPT_GRADED);
-        return eloEventRepository.save(event);
-    }
-
-    @Transactional
-    public EloEvent applyScoreDelta(User user, Attempt attempt, int delta) {
-        int before = user.getEloRating();
-        int after = Math.max(100, before + Math.max(0, delta));
+        int after = Math.max(100, EloCalculator.nextRating(before, paperElo, clamp(scoreRatio), eloProperties.kFactor()));
         user.applyElo(after);
         EloEvent event = EloEvent.record(user, attempt, null, before, after, EloReason.ATTEMPT_GRADED);
         return eloEventRepository.save(event);

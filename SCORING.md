@@ -14,8 +14,7 @@ Luồng chính khi nộp bài: `POST /api/v1/attempts/{id}/submit` → [`Attempt
 | Điểm từng câu trên đề | Cột `paper_questions.points` | JSON import + [`PaperQuestion`](Backend/src/main/java/com/aiexam/learning/paper/domain/PaperQuestion.java) |
 | Chấm khi nộp bài | Auto / AI / thang Part II | [`AttemptService.java`](Backend/src/main/java/com/aiexam/learning/attempt/domain/AttemptService.java) |
 | Rank user | Suy ra từ Elo | [`RankCode.java`](Backend/src/main/java/com/aiexam/learning/user/domain/RankCode.java) |
-| Elo đề thuộc bộ đề (TS10) | Cộng phần nguyên điểm đạt được | `Ts10Scoring.eloDelta` + `EloService.applyScoreDelta` |
-| Elo đề thường (luyện / bài tập) | Công thức Elo cổ điển, K = 24 | [`EloCalculator.java`](Backend/src/main/java/com/aiexam/learning/elo/domain/EloCalculator.java) |
+| Elo sau khi nộp bài | Công thức Elo cổ điển, K = 24, đối thủ là mức Elo của đề | [`EloCalculator.java`](Backend/src/main/java/com/aiexam/learning/elo/domain/EloCalculator.java) |
 | Elo mặc định, K-factor | Config | [`application.yml`](Backend/src/main/resources/application.yml) `app.elo` |
 | Phân loại câu hỏi (difficulty / Bloom / Elo câu) | Heuristic hoặc Spring AI | [`HeuristicExamAiClient`](Backend/src/main/java/com/aiexam/learning/ai/domain/HeuristicExamAiClient.java) |
 | Luyện theo Elo | Chọn câu quanh rating user | [`PracticeService.java`](Backend/src/main/java/com/aiexam/learning/paper/domain/PracticeService.java) |
@@ -114,52 +113,43 @@ app:
     k-factor: 24
 ```
 
-Sàn Elo khi cộng điểm đề bộ: **100** (`EloService.applyScoreDelta`).
+Sàn Elo khi nộp bài: **100** (`EloService.applyAttemptResult`).
 
 Lịch sử: bảng `elo_events` — [`EloEvent.java`](Backend/src/main/java/com/aiexam/learning/elo/domain/EloEvent.java), lý do [`EloReason`](Backend/src/main/java/com/aiexam/learning/elo/domain/EloReason.java): `ATTEMPT_GRADED`, `AI_ADJUSTMENT`, `MANUAL`.
 
-### 3.1 Đề thuộc bộ đề (`paper.paperSet != null`, gồm TS10)
+### 3.1 Mọi đề đã chấm
 
-Trong `AttemptService.submit`:
-
-```
-delta = floor(điểm đạt được)     // Ts10Scoring.eloDelta
-Elo mới = max(100, Elo cũ + delta)
-```
-
-Ví dụ: 10.00 → +10, 9.00 → +9, 8.50 → +8, 0.25 → +0.
-
-Nguồn: `Ts10Scoring.eloDelta` + [`EloService.applyScoreDelta`](Backend/src/main/java/com/aiexam/learning/elo/domain/EloService.java).
-
-### 3.2 Đề thường (không thuộc bộ đề)
-
-Công thức Elo chuẩn trong [`EloCalculator.nextRating`](Backend/src/main/java/com/aiexam/learning/elo/domain/EloCalculator.java):
+Trong `AttemptService.submit`, đề thuộc bộ đề và đề giáo viên tạo dùng cùng một công thức trong [`EloCalculator.nextRating`](Backend/src/main/java/com/aiexam/learning/elo/domain/EloCalculator.java):
 
 ```
+paperElo = round((targetEloMin + targetEloMax) / 2)
+scoreRatio = điểm / max          // Ts10Scoring.eloScore, kẹp 0–1
 expected = 1 / (1 + 10^((paperElo − userElo) / 400))
-Elo mới  = round(userElo + K × (scoreRatio − expected))
+Elo mới  = max(100, round(userElo + K × (scoreRatio − expected)))
 ```
 
 - `K` = 24 (`app.elo.k-factor`)
-- `scoreRatio` = điểm / max (`Ts10Scoring.eloScore`, kẹp 0–1)
-- `paperElo` = trung bình `question.eloRating` trên đề
+- `paperElo` là mức giữa khoảng Elo giáo viên đặt trên đề. Đề TS10 import để 1000–1400 nên đối thủ là 1200. Elo từng câu không còn là đối thủ.
+- Điểm đúng bằng mức kỳ vọng thì Elo đứng yên. Cao hơn thì cộng, thấp hơn thì trừ.
+- Cùng mức Elo: 10/10 → +12, 5/10 → 0, 0/10 → −12.
+- Ví dụ 2.45/10, user 1244, đề 1000–1400: 1244 → 1236 (−8). Đề khó hơn user (ví dụ giữa khoảng 1600) thì cùng điểm 2.45 vẫn được cộng nhẹ.
 
 Gọi qua `EloService.applyAttemptResult`.
 
-`ERD.md` ghi “Elo uses `score / 10`”: đúng cho **đề thường** (tỷ lệ 0–1). Đề TS10 trong bộ đề dùng **cộng phần nguyên điểm**, không dùng K-factor.
+`ERD.md` ghi “Elo uses `score / 10`”: đó là `scoreRatio` so với mức Elo của đề.
 
-### 3.3 AI chỉnh Elo thêm
+### 3.2 AI chỉnh Elo thêm
 
 API `POST /api/v1/ai/attempts/{id}/elo` vẫn tồn tại nhưng **không còn nút trên trang kết quả**. Elo đã được ghi lúc nộp bài; bấm AI adjustment trước đây sẽ tính `suggestedElo` rồi **ghi đè** rating (`applyAdjustment`), thành lần cộng thứ hai.
 
 - Đề trong bộ TS10: API trả `ELO_LOCKED_TO_SCORE`.
-- Đề luyện: heuristic `nextRating` rồi +8 nếu tỷ lệ ≥ 0.9, −6 nếu ≤ 0.3.
+- Đề luyện: đối thủ là mức giữa khoảng Elo của đề; heuristic `nextRating` rồi +8 nếu tỷ lệ ≥ 0.9, −6 nếu ≤ 0.3.
 
-### 3.4 Luyện theo Elo
+### 3.3 Luyện theo Elo
 
 [`PracticeService.startPractice`](Backend/src/main/java/com/aiexam/learning/paper/domain/PracticeService.java): lấy câu `PUBLISHED` trong khoảng `[userElo − 150, userElo + 120]`, ưu tiên gần `userElo + 40`.
 
-### 3.5 Hiển thị Elo
+### 3.4 Hiển thị Elo
 
 - Header refresh sau nộp bài: [`frontend/lib/attempt-actions.ts`](frontend/lib/attempt-actions.ts)
 - Kết quả / lời giải: [`frontend/app/attempts/[id]/page.tsx`](frontend/app/attempts/[id]/page.tsx), [`solutions/page.tsx`](frontend/app/attempts/[id]/solutions/page.tsx)
@@ -195,7 +185,7 @@ Bloom suy từ từ khóa stem / loại câu. Prompt LLM: [`classify-question.st
 
 | File | Kiểm tra |
 |---|---|
-| [`Ts10ScoringTest.java`](Backend/src/test/java/com/aiexam/learning/attempt/domain/Ts10ScoringTest.java) | Thang Part II, `eloScore`, `eloDelta` |
+| [`Ts10ScoringTest.java`](Backend/src/test/java/com/aiexam/learning/attempt/domain/Ts10ScoringTest.java) | Thang Part II, `eloScore` |
 | [`EloCalculatorTest.java`](Backend/src/test/java/com/aiexam/learning/elo/domain/EloCalculatorTest.java) | Công thức Elo |
 | [`RankCodeTest.java`](Backend/src/test/java/com/aiexam/learning/user/domain/RankCodeTest.java) | Ngưỡng rank |
 | [`HeuristicExamAiClientTest.java`](Backend/src/test/java/com/aiexam/learning/ai/domain/HeuristicExamAiClientTest.java) | Chấm short answer / classify |
@@ -204,10 +194,10 @@ Bloom suy từ từ khóa stem / loại câu. Prompt LLM: [`classify-question.st
 
 ## 6. Sửa tiêu chí thì sửa file nào
 
-- Thang điểm TS10 / Elo cộng theo điểm đề bộ → `Ts10Scoring.java` rồi test `Ts10ScoringTest`
-- Cách chấm khi nộp → `AttemptService.java` (`grade`, `applyPartTwoGroupScores`, nhánh Elo)
+- Thang điểm TS10 → `Ts10Scoring.java` rồi test `Ts10ScoringTest`
+- Cách chấm khi nộp và Elo sau nộp → `AttemptService.java` (`grade`, `applyPartTwoGroupScores`) + `EloCalculator.java`
 - Bậc rank → `RankCode.fromElo`
 - K-factor / Elo khởi điểm → `application.yml` + `EloProperties`
-- Công thức Elo đề thường → `EloCalculator.java`
+- Công thức Elo → `EloCalculator.java`
 - Chấm AI / heuristic → `grade-answer.st` hoặc `HeuristicExamAiClient.grade`
 - Điểm in trên từng câu đề import → `ts10-2025-2026.json` (`points`) rồi re-import

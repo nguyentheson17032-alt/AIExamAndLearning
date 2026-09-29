@@ -34,9 +34,6 @@ export default async function AttemptDetailPage({ params }: { params: Promise<{ 
             Elo {attempt.eloBefore ?? "—"} → {attempt.eloAfter ?? "—"}
             {attempt.eloDelta != null ? ` (${attempt.eloDelta > 0 ? "+" : ""}${attempt.eloDelta})` : ""}
             {attempt.rankAfter ? ` · ${attempt.rankAfter}` : ""}
-            {paper.paperSetId && attempt.eloDelta != null
-              ? ` · +${attempt.eloDelta} Elo theo ${attempt.score} điểm`
-              : ""}
           </p>
           {attempt.status === "GRADED" ? (
             <Link

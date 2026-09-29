@@ -1572,3 +1572,40 @@ Started: 2026-09-29
 - `npx tsx --test lib/exam-bank.test.ts` passed
 - Browser was not run; the app was not started in this step
 - Planned commit: `feat(exam): open parts by subject and apply official counts`
+
+## Phase 49: Exam Elo
+
+**Status:** completed
+
+Started: 2026-09-29
+
+### Work
+
+- Every graded exam, including exam-set papers, now updates Elo with the same formula
+- The opponent rating is the midpoint of the paper's target Elo range, so the range the teacher sets is what the score is compared with
+- A score above the expected ratio adds Elo and a score below it subtracts Elo; the rating cannot fall below 100
+- Result and solution pages show the signed change without the old "theo điểm" wording
+
+### User prompts
+
+1. > sửa lại cơ chế cộng trừ elo sao cho phù hợp nhất
+
+### Skills used
+
+- identity
+- project-todo
+- git-auto-commit-push
+
+### Rules used
+
+- project-todo.mdc
+- identity.mdc
+- erd.mdc
+- karpathy-guidelines.mdc
+- agent-auto-git.mdc
+
+### Outcome
+
+- `mvnw -Dtest=EloCalculatorTest,Ts10ScoringTest,AiExamServiceTest test` passed
+- Browser was not run; the result card depends on a live graded attempt
+- Planned commit: `fix(elo): compare exam scores with the paper Elo range`

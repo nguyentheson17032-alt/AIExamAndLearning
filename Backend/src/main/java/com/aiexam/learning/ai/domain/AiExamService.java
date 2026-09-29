@@ -6,6 +6,7 @@ import com.aiexam.learning.ai.infrastructure.AiGenerationJobRepository;
 import com.aiexam.learning.attempt.domain.Attempt;
 import com.aiexam.learning.attempt.domain.AttemptService;
 import com.aiexam.learning.common.exception.ResourceNotFoundException;
+import com.aiexam.learning.elo.domain.EloCalculator;
 import com.aiexam.learning.elo.domain.EloReason;
 import com.aiexam.learning.elo.domain.EloService;
 import com.aiexam.learning.paper.api.PaperResponse;
@@ -150,9 +151,9 @@ public class AiExamService {
         }
         AiGenerationJob job = jobRepository.save(AiGenerationJob.start(user, AiJobType.ELO, attemptId.toString()));
         try {
-            int paperElo = attempt.getPaper().getItems().stream()
-                    .mapToInt(item -> item.getQuestion().getEloRating())
-                    .sum() / Math.max(1, attempt.getPaper().getItems().size());
+            int paperElo = EloCalculator.paperRating(
+                    attempt.getPaper().getTargetEloMin(),
+                    attempt.getPaper().getTargetEloMax());
             double ratio = 0;
             if (attempt.getScore() != null && attempt.getMaxScore() != null && attempt.getMaxScore().signum() > 0) {
                 ratio = attempt.getScore().doubleValue() / attempt.getMaxScore().doubleValue();
