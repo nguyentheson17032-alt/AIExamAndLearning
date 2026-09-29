@@ -301,3 +301,10 @@
 - [x] Add a student by display name and share uploaded papers
 - [x] Show class papers to enrolled students
 - [x] Add Classes to navigation
+
+## Phase 47: Exam Question Bank
+
+- [x] Show uploaded exam-set questions by subject and Phần I, II, III
+- [x] Require a title, subject, and full part counts when creating an exam
+- [x] Let the teacher set the exam Elo range
+- [x] Add tests for the exam bank and required part counts

@@ -27,7 +27,7 @@ export default async function PapersPage() {
         {teacher ? (
           <>
             <Link href="/papers/new" className="rounded-md bg-accent px-3 py-2 text-sm text-white hover:bg-accent-hover">
-              Create paper
+              Tạo đề
             </Link>
             <Link href="/papers/generate" className="rounded-md border border-line px-3 py-2 text-sm hover:border-accent">
               Generate

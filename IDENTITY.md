@@ -1503,3 +1503,38 @@ Started: 2026-09-28
 - Frontend typecheck reported only existing errors outside this change
 - Browser was not run; no dev server was up
 - Planned commit: `feat(classroom): add class pages for teachers and students`
+
+## Phase 47: Exam Question Bank
+
+**Status:** completed
+
+Started: 2026-09-29
+
+### Work
+
+- Questions page lists questions from uploaded exam sets, grouped by subject then Phần I, II, and III
+- Creating an exam requires a title, a subject, 12 Phần I questions, 4 Phần II groups, and 6 Phần III questions
+- The teacher can set the exam Elo range; duration follows the part rules (66 minutes)
+- Added exam-bank tests for grouping, required counts, and labels
+
+### User prompts
+
+1. > trang question là tất cả các câu hỏi trong nhũng bộ đề mà tôi đã tải lên và chỉ cần chia ra từng Phần (I,II,II) của từng môn(Toán, Vật Lí,....) và khi giáo viên muốn Tạo đề thì bắt phải nhập tên đề -> chọn môn -> phần I: chọn đủ số câu theo quy tắc đề -> phần II: chọn đủ số câu theo quy tắc đề -> phần III: chọn đủ số câu theo quy tắc đề -> Elo: giáo viên có thể chỉnh mức elo
+
+### Skills used
+
+- identity
+- project-todo
+
+### Rules used
+
+- project-todo.mdc
+- identity.mdc
+- karpathy-guidelines.mdc
+- react.mdc
+
+### Outcome
+
+- `npm test` in frontend passed, including exam-bank tests
+- Browser was not run; the app servers were not listening
+- Planned commit: `feat(exam): group uploaded questions and require a full paper`

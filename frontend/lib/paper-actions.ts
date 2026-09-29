@@ -1,6 +1,7 @@
 "use server";
 
 import { backendFetch, errorMessage, rethrowIfRedirect } from "@/lib/backend";
+import { buildExamQuestions } from "@/lib/exam-bank";
 import { requireTeacher, requireUser } from "@/lib/guards";
 import type { Attempt, Paper } from "@/lib/types";
 import { revalidatePath } from "next/cache";
@@ -13,21 +14,37 @@ export async function createPaperAction(
   formData: FormData,
 ): Promise<PaperFormState> {
   await requireTeacher();
-  const questionIds = formData.getAll("questionId").map((value) => String(value)).filter(Boolean);
-  if (questionIds.length === 0) {
-    return { error: "Select at least one question." };
+  const title = String(formData.get("title") ?? "").trim();
+  if (!title) {
+    return { error: "Nhập tên đề." };
+  }
+  const targetEloMin = Number(formData.get("targetEloMin") ?? 1000);
+  const targetEloMax = Number(formData.get("targetEloMax") ?? 1400);
+  if (!Number.isFinite(targetEloMin) || !Number.isFinite(targetEloMax) || targetEloMin > targetEloMax) {
+    return { error: "Elo tối thiểu phải nhỏ hơn hoặc bằng Elo tối đa." };
+  }
+  const built = buildExamQuestions({
+    partOneIds: formData.getAll("partOne").map(String).filter(Boolean),
+    partTwoGroups: formData
+      .getAll("partTwo")
+      .map((value) => String(value).split(",").filter(Boolean))
+      .filter((group) => group.length > 0),
+    partThreeIds: formData.getAll("partThree").map(String).filter(Boolean),
+  });
+  if ("error" in built) {
+    return { error: built.error };
   }
   const payload = {
     subjectId: String(formData.get("subjectId") ?? ""),
-    title: String(formData.get("title") ?? "").trim(),
-    description: String(formData.get("description") ?? "").trim() || null,
-    kind: String(formData.get("kind") ?? "EXAM"),
+    title,
+    description: null,
+    kind: "EXAM",
     source: "MANUAL",
-    durationMinutes: Number(formData.get("durationMinutes") ?? 45),
-    targetEloMin: Number(formData.get("targetEloMin") ?? 800),
-    targetEloMax: Number(formData.get("targetEloMax") ?? 1400),
+    durationMinutes: built.durationMinutes,
+    targetEloMin,
+    targetEloMax,
     status: "PUBLISHED",
-    questions: questionIds.map((questionId) => ({ questionId, points: 1 })),
+    questions: built.questions,
     classroomId: String(formData.get("classroomId") ?? "").trim() || null,
   };
   let paper: Paper;
