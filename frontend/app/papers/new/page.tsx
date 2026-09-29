@@ -17,7 +17,7 @@ export default async function NewPaperPage() {
     <>
       <PageHeader
         title="Tạo đề"
-        description="Nhập tên đề, chọn môn, chọn đủ câu Phần I, II, III, rồi chỉnh Elo."
+        description="Nhập tên đề, chọn môn, chọn từng phần cho đủ số câu của môn đó, rồi chỉnh Elo."
       />
       <PaperCreateForm subjects={subjects.content} banks={examBanks(papers)} classrooms={classrooms} />
     </>

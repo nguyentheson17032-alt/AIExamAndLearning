@@ -1,7 +1,7 @@
 "use server";
 
 import { backendFetch, errorMessage, rethrowIfRedirect } from "@/lib/backend";
-import { buildExamQuestions } from "@/lib/exam-bank";
+import { buildExamQuestions, examBlueprint } from "@/lib/exam-bank";
 import { requireTeacher, requireUser } from "@/lib/guards";
 import type { Attempt, Paper } from "@/lib/types";
 import { revalidatePath } from "next/cache";
@@ -23,7 +23,12 @@ export async function createPaperAction(
   if (!Number.isFinite(targetEloMin) || !Number.isFinite(targetEloMax) || targetEloMin > targetEloMax) {
     return { error: "Elo tối thiểu phải nhỏ hơn hoặc bằng Elo tối đa." };
   }
+  const blueprint = examBlueprint(String(formData.get("subjectName") ?? ""));
+  if (!blueprint) {
+    return { error: "Chưa có quy tắc đề cho môn này." };
+  }
   const built = buildExamQuestions({
+    blueprint,
     partOneIds: formData.getAll("partOne").map(String).filter(Boolean),
     partTwoGroups: formData
       .getAll("partTwo")

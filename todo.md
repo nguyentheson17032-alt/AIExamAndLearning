@@ -308,3 +308,10 @@
 - [x] Require a title, subject, and full part counts when creating an exam
 - [x] Let the teacher set the exam Elo range
 - [x] Add tests for the exam bank and required part counts
+
+## Phase 48: Subject Exam Rules
+
+- [x] Open a subject, then a part, before listing its questions
+- [x] Advance the create-exam form to the next part when the current part is full
+- [x] Set part counts and duration by subject group
+- [x] Add tests for the subject exam rules

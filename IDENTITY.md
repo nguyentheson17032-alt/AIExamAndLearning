@@ -1538,3 +1538,37 @@ Started: 2026-09-29
 - `npm test` in frontend passed, including exam-bank tests
 - Browser was not run; the app servers were not listening
 - Planned commit: `feat(exam): group uploaded questions and require a full paper`
+
+## Phase 48: Subject Exam Rules
+
+**Status:** completed
+
+Started: 2026-09-29
+
+### Work
+
+- Question bank opens one subject, then one part, before showing questions
+- Creating an exam opens one part at a time and moves on when that part is full
+- Part counts and duration follow the subject group: Toán 12/4/6 in 90 minutes; science 18/4/6 in 50; history, civics, and technology 24/4/0 in 50; informatics 24/6/0 in 50; foreign language 40 in 50
+
+### User prompts
+
+1. > Trang Question ,ví dụ bấm vào Vật Lí hoặc Toán thì mới hiện Phần I,II,II, khi bấm vào Phần I,II,IIi thì hiện chi tiết các câu hỏi. Còn phần tạo đề trong Trang Question, ví dụ bấm vào phần I thì hiện tất cả các câu hỏi, khi chọn đủ số lượng câu hỏi thì tự dộng đóng lại rồi đến phần II,III tương tự như thế. bạn set up lại số lượng câu hỏi được chọn như sau: (Môn Toán (90 phút) • Phần I: 12 câu • Phần II: 4 câu • Phần III: 6 câu. Vật lí, Hóa học, Sinh học, Địa lí (50 phút) • 18 / 4 / 6. Lịch sử, Giáo dục kinh tế và pháp luật, Công nghệ (50 phút) • 24 / 4 / 0. Tin học (50 phút) • 24 / 6 / 0. Ngoại ngữ (50 phút) • Phần I: 40 câu, không có Phần II và III.)
+
+### Skills used
+
+- identity
+- project-todo
+
+### Rules used
+
+- project-todo.mdc
+- identity.mdc
+- karpathy-guidelines.mdc
+- react.mdc
+
+### Outcome
+
+- `npx tsx --test lib/exam-bank.test.ts` passed
+- Browser was not run; the app was not started in this step
+- Planned commit: `feat(exam): open parts by subject and apply official counts`

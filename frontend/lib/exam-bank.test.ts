@@ -1,6 +1,6 @@
 import assert from "node:assert/strict";
 import { describe, it } from "node:test";
-import { buildExamQuestions, examBanks, examDurationMinutes, examSelectionError } from "./exam-bank";
+import { buildExamQuestions, examBanks, examBlueprint, examSelectionError, nextExamSection } from "./exam-bank";
 import type { Paper, PaperItem, Question } from "./types";
 
 describe("exam bank", () => {
@@ -33,14 +33,42 @@ describe("exam bank", () => {
     assert.equal(banks[0].partTwo.length, 1);
   });
 
-  it("requires 12, 4, and 6 questions", () => {
-    assert.match(examSelectionError(11, 4, 6) ?? "", /Phần I cần đúng 12/);
-    assert.equal(examSelectionError(12, 4, 6), null);
-    assert.equal(examDurationMinutes(), 66);
+  it("uses the official count and duration for each subject group", () => {
+    assert.deepEqual(examBlueprint("Toán"), { durationMinutes: 90, partOne: 12, partTwo: 4, partThree: 6 });
+    assert.deepEqual(examBlueprint("Vật lí"), { durationMinutes: 50, partOne: 18, partTwo: 4, partThree: 6 });
+    assert.deepEqual(examBlueprint("Hóa học"), examBlueprint("Sinh học"));
+    assert.deepEqual(examBlueprint("Địa lí"), examBlueprint("Vật lý"));
+    assert.deepEqual(examBlueprint("Lịch sử"), { durationMinutes: 50, partOne: 24, partTwo: 4, partThree: 0 });
+    assert.deepEqual(examBlueprint("Giáo dục kinh tế và pháp luật"), examBlueprint("Công nghệ"));
+    assert.deepEqual(examBlueprint("Tin học"), { durationMinutes: 50, partOne: 24, partTwo: 6, partThree: 0 });
+    assert.deepEqual(examBlueprint("Ngoại ngữ"), { durationMinutes: 50, partOne: 40, partTwo: 0, partThree: 0 });
+    assert.equal(examBlueprint("Tiếng Anh")?.partTwo, 0);
+    assert.equal(examBlueprint("Chưa rõ"), null);
+  });
+
+  it("requires the subject blueprint and moves to the next part that exists", () => {
+    const math = examBlueprint("Toán");
+    if (!math) {
+      throw new Error("missing Toán blueprint");
+    }
+    assert.match(examSelectionError(math, 11, 4, 6) ?? "", /Phần I cần đúng 12/);
+    assert.equal(examSelectionError(math, 12, 4, 6), null);
+    assert.equal(nextExamSection(math, "PART_I"), "PART_II");
+    const language = examBlueprint("Ngoại ngữ");
+    if (!language) {
+      throw new Error("missing Ngoại ngữ blueprint");
+    }
+    assert.equal(nextExamSection(language, "PART_I"), null);
+    assert.match(examSelectionError(language, 40, 1, 0) ?? "", /Phần II không có/);
   });
 
   it("labels a complete exam in part order", () => {
+    const math = examBlueprint("Toán");
+    if (!math) {
+      throw new Error("missing Toán blueprint");
+    }
     const built = buildExamQuestions({
+      blueprint: math,
       partOneIds: Array.from({ length: 12 }, (_, index) => `i${index}`),
       partTwoGroups: Array.from({ length: 4 }, (_, group) => [`g${group}a`, `g${group}b`, `g${group}c`, `g${group}d`]),
       partThreeIds: Array.from({ length: 6 }, (_, index) => `s${index}`),
@@ -54,6 +82,7 @@ describe("exam bank", () => {
     assert.equal(built.questions[15].groupKey, "II.1");
     assert.equal(built.questions.at(-1)?.itemLabel, "III.6");
     assert.equal(built.questions.length, 12 + 16 + 6);
+    assert.equal(built.durationMinutes, 90);
   });
 });
 

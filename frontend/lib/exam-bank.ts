@@ -2,14 +2,83 @@ import type { Paper, PaperItem } from "./types";
 
 export type ExamSection = "PART_I" | "PART_II" | "PART_III";
 
-export const EXAM_PARTS = [
-  { section: "PART_I" as const, title: "Phần I", required: 12, points: 0.25, minutesEach: 2 },
-  { section: "PART_II" as const, title: "Phần II", required: 4, points: 0.25, minutesEach: 6 },
-  { section: "PART_III" as const, title: "Phần III", required: 6, points: 0.5, minutesEach: 3 },
+export const EXAM_SECTIONS: { section: ExamSection; title: string; points: number }[] = [
+  { section: "PART_I", title: "Phần I", points: 0.25 },
+  { section: "PART_II", title: "Phần II", points: 0.25 },
+  { section: "PART_III", title: "Phần III", points: 0.5 },
 ];
 
-export function examDurationMinutes(): number {
-  return EXAM_PARTS.reduce((total, part) => total + part.required * part.minutesEach, 0);
+export type ExamBlueprint = {
+  durationMinutes: number;
+  partOne: number;
+  partTwo: number;
+  partThree: number;
+};
+
+const MATH: ExamBlueprint = { durationMinutes: 90, partOne: 12, partTwo: 4, partThree: 6 };
+const SCIENCE: ExamBlueprint = { durationMinutes: 50, partOne: 18, partTwo: 4, partThree: 6 };
+const SOCIAL: ExamBlueprint = { durationMinutes: 50, partOne: 24, partTwo: 4, partThree: 0 };
+const INFORMATICS: ExamBlueprint = { durationMinutes: 50, partOne: 24, partTwo: 6, partThree: 0 };
+const LANGUAGE: ExamBlueprint = { durationMinutes: 50, partOne: 40, partTwo: 0, partThree: 0 };
+
+export function examBlueprint(subjectName: string): ExamBlueprint | null {
+  const name = foldSubject(subjectName);
+  if (name.includes("tin hoc") || name.includes("informatics")) {
+    return INFORMATICS;
+  }
+  if (name.includes("ngoai ngu") || name.includes("tieng anh") || name.includes("english")) {
+    return LANGUAGE;
+  }
+  if (
+    name.includes("lich su") ||
+    name.includes("phap luat") ||
+    name.includes("giao duc kinh te") ||
+    name.includes("cong nghe")
+  ) {
+    return SOCIAL;
+  }
+  if (
+    name.includes("vat li") ||
+    name.includes("vat ly") ||
+    name.includes("hoa hoc") ||
+    name.includes("sinh hoc") ||
+    name.includes("dia li") ||
+    name.includes("dia ly")
+  ) {
+    return SCIENCE;
+  }
+  if (name.includes("toan") || name === "math") {
+    return MATH;
+  }
+  return null;
+}
+
+export function requiredCount(blueprint: ExamBlueprint, section: ExamSection): number {
+  if (section === "PART_I") {
+    return blueprint.partOne;
+  }
+  if (section === "PART_II") {
+    return blueprint.partTwo;
+  }
+  return blueprint.partThree;
+}
+
+export function nextExamSection(blueprint: ExamBlueprint, section: ExamSection): ExamSection | null {
+  const order: ExamSection[] = ["PART_I", "PART_II", "PART_III"];
+  for (const candidate of order.slice(order.indexOf(section) + 1)) {
+    if (requiredCount(blueprint, candidate) > 0) {
+      return candidate;
+    }
+  }
+  return null;
+}
+
+function foldSubject(value: string): string {
+  return value
+    .normalize("NFD")
+    .replace(/\p{Diacritic}/gu, "")
+    .replace(/đ/gi, "d")
+    .toLowerCase();
 }
 
 export type BankQuestion = {
@@ -73,24 +142,39 @@ export function examBanks(papers: Paper[]): SubjectBank[] {
   return [...bySubject.values()];
 }
 
-export function examSelectionError(partOne: number, partTwo: number, partThree: number): string | null {
-  const gaps = EXAM_PARTS.flatMap((part) => {
+export function examSelectionError(
+  blueprint: ExamBlueprint,
+  partOne: number,
+  partTwo: number,
+  partThree: number,
+): string | null {
+  const gaps = EXAM_SECTIONS.flatMap((part) => {
     const selected = part.section === "PART_I" ? partOne : part.section === "PART_II" ? partTwo : partThree;
-    return selected === part.required ? [] : [`${part.title} cần đúng ${part.required} câu (đang chọn ${selected})`];
+    const required = requiredCount(blueprint, part.section);
+    if (required === 0) {
+      return selected === 0 ? [] : [`${part.title} không có trong môn này`];
+    }
+    return selected === required ? [] : [`${part.title} cần đúng ${required} câu (đang chọn ${selected})`];
   });
   return gaps.length === 0 ? null : `${gaps.join(". ")}.`;
 }
 
 export function buildExamQuestions(input: {
+  blueprint: ExamBlueprint;
   partOneIds: string[];
   partTwoGroups: string[][];
   partThreeIds: string[];
 }): { error: string } | { questions: ExamQuestionPayload[]; durationMinutes: number } {
-  const error = examSelectionError(input.partOneIds.length, input.partTwoGroups.length, input.partThreeIds.length);
+  const error = examSelectionError(
+    input.blueprint,
+    input.partOneIds.length,
+    input.partTwoGroups.length,
+    input.partThreeIds.length,
+  );
   if (error) {
     return { error };
   }
-  if (input.partTwoGroups.some((group) => group.length !== PART_II_SIZE)) {
+  if (input.blueprint.partTwo > 0 && input.partTwoGroups.some((group) => group.length !== PART_II_SIZE)) {
     return { error: "Mỗi câu Phần II phải đủ 4 ý a–d." };
   }
 
@@ -104,11 +188,11 @@ export function buildExamQuestions(input: {
     }),
     ...input.partThreeIds.map((questionId, index) => item(questionId, "PART_III", `III.${index + 1}`, null)),
   ];
-  return { questions, durationMinutes: examDurationMinutes() };
+  return { questions, durationMinutes: input.blueprint.durationMinutes };
 }
 
 function item(questionId: string, section: ExamSection, itemLabel: string, groupKey: string | null): ExamQuestionPayload {
-  const part = EXAM_PARTS.find((entry) => entry.section === section) ?? EXAM_PARTS[0];
+  const part = EXAM_SECTIONS.find((entry) => entry.section === section) ?? EXAM_SECTIONS[0];
   return {
     questionId,
     points: part.points,
