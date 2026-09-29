@@ -1,6 +1,5 @@
 import { EmptyState } from "@/components/empty-state";
-import { PageHeader } from "@/components/page-header";
-import { PaperCreateForm } from "@/components/paper-create-form";
+import { QuestionExamCreator } from "@/components/question-exam-creator";
 import { QuestionBankBrowser } from "@/components/question-bank-browser";
 import { backendFetch } from "@/lib/backend";
 import { examBanks } from "@/lib/exam-bank";
@@ -22,24 +21,12 @@ export default async function QuestionsPage() {
     .toSorted((a, b) => a.name.localeCompare(b.name, "vi"));
 
   return (
-    <>
-      <PageHeader title="Câu hỏi" description="Bấm môn, rồi bấm Phần I, II hoặc III để xem câu hỏi trong bộ đề đã tải lên.">
-        <a href="#tao-de" className="rounded-md bg-accent px-3 py-2 text-sm text-white hover:bg-accent-hover">
-          Tạo đề
-        </a>
-      </PageHeader>
+    <QuestionExamCreator subjects={subjects.content} banks={banks} classrooms={classrooms}>
       {rows.length === 0 ? (
         <EmptyState title="Chưa có câu hỏi" description="Tải một bộ đề để xem câu hỏi theo từng phần." />
       ) : (
         <QuestionBankBrowser rows={rows} />
       )}
-      <section id="tao-de" className="mt-10 space-y-4">
-        <h2 className="text-lg font-semibold">Tạo đề</h2>
-        <p className="text-sm text-muted">
-          Nhập tên đề, chọn môn, rồi chọn từng phần. Đủ số câu thì phần đó đóng và mở phần tiếp theo.
-        </p>
-        <PaperCreateForm subjects={subjects.content} banks={banks} classrooms={classrooms} />
-      </section>
-    </>
+    </QuestionExamCreator>
   );
 }
