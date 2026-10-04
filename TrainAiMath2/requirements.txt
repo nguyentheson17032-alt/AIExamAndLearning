@@ -1,0 +1,14 @@
+# AI Training Project - Requirements
+# These libraries are used throughout the project.
+# In Google Colab, most are pre-installed.
+# Use this file to track versions and for local setup.
+
+torch>=2.0.0
+numpy>=1.24.0
+matplotlib>=3.7.0
+pandas>=2.0.0
+scikit-learn>=1.3.0
+pyyaml>=6.0
+uvicorn>=0.22.0
+fastapi>=0.100.0
+
