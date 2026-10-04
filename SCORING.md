@@ -116,31 +116,40 @@ Lịch sử: bảng `elo_events` — [`EloEvent.java`](Backend/src/main/java/com
 
 Khi nộp bài trong `AttemptService.submit`, hệ thống gọi qua `EloService.applyAttemptResult` kết hợp 4 cơ chế nâng cao trong [`EloCalculator.java`](Backend/src/main/java/com/aiexam/learning/elo/domain/EloCalculator.java):
 
-1. **Cộng Elo theo độ khó và số câu làm đúng (Difficulty & Item-based Elo Gain)**:
-   - Với mỗi câu hỏi $i$ có điểm tối đa $p_i$, điểm đạt được $s_i$, tỷ lệ làm đúng $r_i = \frac{s_i}{p_i} \in [0, 1]$:
-     - **Đề / Câu Easy (BEGINNER):** Hệ số $C_i = 0.3$ (Ví dụ: 3 câu đúng = $+0.9$ Elo)
-     - **Đề / Câu Medium (INTERMEDIATE):** Hệ số $C_i = 0.4$ (Ví dụ: 20 câu đúng = $+8.0$ Elo)
-     - **Đề / Câu Hard (ADVANCED / EXPERT):** Hệ số $C_i = 0.5$ (Ví dụ: 20 câu đúng = $+10.0$ Elo)
+1. **Cộng / Trừ Elo theo độ khó và tỷ lệ đúng sai từng câu (Difficulty & Item-based Multi-dimensional Engine)**:
+   - Với mỗi câu hỏi $i$ có điểm tối đa $p_i$, điểm đạt được $s_i$, tỷ lệ làm đúng $r_i = \frac{s_i}{p_i} \in [0, 1]$, tỷ lệ sai là $(1 - r_i)$:
+     - **Hệ số cộng điểm khi đúng (Đã giảm 50%):**
+       - Đề / Câu Easy (`BEGINNER`): Hệ số $C_i = 0.15$ (Ví dụ: 3 câu đúng = $+0.45$ Elo)
+       - Đề / Câu Medium (`INTERMEDIATE`): Hệ số $C_i = 0.20$ (Ví dụ: 20 câu đúng = $+4.0$ Elo)
+       - Đề / Câu Hard (`ADVANCED` / `EXPERT`): Hệ số $C_i = 0.25$ (Ví dụ: 20 câu đúng = $+5.0$ Elo)
+     - **Hệ số phạt khi làm sai:**
+       - Đề / Câu Easy (`BEGINNER`): Hệ số phạt $P_i = 0.25$ (Làm sai câu dễ bị phạt nặng)
+       - Đề / Câu Medium (`INTERMEDIATE`): Hệ số phạt $P_i = 0.15$
+       - Đề / Câu Hard (`ADVANCED` / `EXPERT`): Hệ số phạt $P_i = 0.10$ (Làm sai câu khó bị phạt nhẹ)
 
-2. **Hệ số tương xứng trình độ (Level-Match Multiplier $M_{\text{match}}$)**:
-   - Ngăn người chơi rank cao làm đề quá dễ để farm điểm:
-     - Nếu $Q_{\text{elo}} \ge User_{\text{elo}}$: $M_{\text{match}} = 1.0$ ($100\%$ điểm).
-     - Nếu $Q_{\text{elo}} < User_{\text{elo}}$: $M_{\text{match}} = \max\left(0.05, \frac{2}{1 + 10^{(User_{\text{elo}} - Q_{\text{elo}}) / 400}}\right)$
-   - Elo cơ sở nhận được: $\Delta_{\text{raw}} = \sum (r_i \times C_i \times M_{\text{match}, i})$
+2. **Hệ số tương xứng trình độ (Level Match Multiplier $M_{\text{gain}}$ & $M_{\text{penalty}}$)**:
+   - **Khi cộng điểm ($M_{\text{gain}}$):** Ngăn người rank cao làm đề dễ để farm điểm:
+     - Nếu $Q_{\text{elo}} \ge User_{\text{elo}}$: $M_{\text{gain}} = 1.0$.
+     - Nếu $Q_{\text{elo}} < User_{\text{elo}}$: $M_{\text{gain}} = \max\left(0.05, \frac{2}{1 + 10^{(User_{\text{elo}} - Q_{\text{elo}}) / 400}}\right)$.
+   - **Khi trừ điểm ($M_{\text{penalty}}$):** Phạt nặng người rank cao làm sai câu dễ:
+     - Nếu $User_{\text{elo}} \le Q_{\text{elo}}$ (làm sai câu khó hơn trình độ): $M_{\text{penalty}} = \max\left(0.1, \frac{2}{1 + 10^{(Q_{\text{elo}} - User_{\text{elo}}) / 400}}\right) \le 1.0$ (giảm nhẹ phạt).
+     - Nếu $User_{\text{elo}} > Q_{\text{elo}}$ (làm sai câu dưới trình độ): $M_{\text{penalty}} = \min\left(2.0, 1.0 + (1.0 - \frac{2}{1 + 10^{(User_{\text{elo}} - Q_{\text{elo}}) / 400}})\right) \ge 1.0$ (tăng nặng mức phạt).
+   - Elo cơ sở nhận được: $\Delta_{\text{raw}} = \sum \left( r_i \times C_i \times M_{\text{gain}, i} - (1 - r_i) \times P_i \times M_{\text{penalty}, i} \right)$
 
 3. **Streak Multiplier (Thưởng phong độ chuỗi bài tốt)**:
-   - Nếu bài thi đạt điểm cao ($S_{\text{total}} \ge 0.80$):
+   - Nếu bài thi đạt $\Delta_{\text{raw}} > 0$ và điểm $S_{\text{total}} \ge 0.80$:
      $M_{\text{streak}} = 1.0 + \min(0.25, 0.05 \times \text{recentStreaks})$ (thưởng tối đa $+25\%$).
 
 4. **Time-Efficiency Multiplier (Thưởng tốc độ làm bài chuẩn xác)**:
-   - Nếu làm bài đạt điểm khá giỏi ($S_{\text{total}} \ge 0.70$) và thời gian hoàn thành $t_{\text{spent}}$ nằm trong khoảng $30\% - 80\%$ thời lượng đề:
+   - Nếu bài thi đạt $\Delta_{\text{raw}} > 0$, điểm $S_{\text{total}} \ge 0.70$ và thời gian hoàn thành $t_{\text{spent}}$ nằm trong khoảng $30\% - 80\%$ thời lượng đề:
      $M_{\text{time}} = 1.0 + 0.15 \times \left(1.0 - \frac{r_t - 0.30}{0.50}\right)$ (thưởng từ $0\%$ đến $+15\%$).
 
 5. **Tổng hợp biến thiên & Cập nhật**:
-   - $\Delta = \Delta_{\text{raw}} \times M_{\text{streak}} \times M_{\text{time}}$
+   - Nếu $\Delta_{\text{raw}} > 0$: $\Delta = \Delta_{\text{raw}} \times M_{\text{streak}} \times M_{\text{time}}$.
+   - Nếu $\Delta_{\text{raw}} \le 0$: $\Delta = \Delta_{\text{raw}}$ (áp dụng mức trừ).
    - $\text{Elo mới} = \max(100, \text{round}(userElo + \Delta))$
 
-5. **Dynamic Item Calibration (Hiệu chỉnh Elo 2 chiều cho câu hỏi)**:
+6. **Dynamic Item Calibration (Hiệu chỉnh Elo 2 chiều cho câu hỏi)**:
    - Mỗi lần học sinh làm bài, độ khó của từng câu hỏi được tự động điều chỉnh nhẹ ($K_{\text{item}} = 4$):
      $\Delta Q_i = \text{round}(4 \times ((1 - r_i) - (1 - E_i)))$
    - Giúp câu hỏi quá nhiều người làm sai sẽ tăng Elo (khó lên), và câu hỏi ai cũng làm đúng sẽ giảm Elo (dễ đi).

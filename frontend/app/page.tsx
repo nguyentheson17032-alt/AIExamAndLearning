@@ -26,14 +26,10 @@ export default async function HomePage() {
         title={`Hello, ${profile.displayName}`}
         description={`${profile.rankCode} · Elo ${profile.eloRating} · ${profile.role}`}
       />
-      <div className="grid gap-4 sm:grid-cols-2 lg:grid-cols-4">
+      <div className="grid gap-4 sm:grid-cols-2 lg:grid-cols-3">
         <Link href="/subjects" className="rounded-xl border border-line bg-card p-5 hover:border-accent">
           <h2 className="font-medium">Subjects</h2>
           <p className="mt-1 text-sm text-muted">{subjectCount} subjects.</p>
-        </Link>
-          <Link href="/papers" className="rounded-xl border border-line bg-card p-5 hover:border-accent">
-          <h2 className="font-medium">Papers</h2>
-          <p className="mt-1 text-sm text-muted">{papers.totalElements} exams, assignments, and practice sets.</p>
         </Link>
         <Link href="/classrooms" className="rounded-xl border border-line bg-card p-5 hover:border-accent">
           <h2 className="font-medium">Classes</h2>
@@ -46,13 +42,6 @@ export default async function HomePage() {
           <p className="mt-1 text-sm text-muted">{attempts.totalElements} attempts recorded.</p>
         </Link>
       </div>
-      {teacher ? (
-        <div className="mt-6 flex flex-wrap gap-3 text-sm">
-          <Link href="/papers/generate" className="rounded-md border border-line px-3 py-2 hover:border-accent">
-            Generate paper
-          </Link>
-        </div>
-      ) : null}
     </>
   );
 }

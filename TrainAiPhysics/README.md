@@ -11,7 +11,6 @@ Hệ thống AI chuyên biệt dành riêng cho môn **Vật Lý** (THPT, Tuyể
    - Quang học & Thấu kính (Optics)
    - Nhiệt học & Khí lý tưởng (Thermodynamics)
    - Lượng tử ánh sáng & Vật lý hạt nhân (Quantum & Nuclear)
-   - Cấu trúc đề thi chuẩn Bộ GD&ĐT 2025: Trắc nghiệm 4 lựa chọn (Phần I), Trắc nghiệm Đúng/Sai 4 ý (Phần II), Trắc nghiệm Trả lời ngắn (Phần III).
 3. **Intelligent Answer Evaluator (`evaluator.py`)**: Thẩm định câu trả lời, bóc tách số học & đơn vị đo lường (m/s, rad/s, A, V, Ω, J, W, eV, atm, °C...), đánh giá sai số làm tròn số học và nhận xét sư phạm chi tiết.
 4. **Interactive AI Physics Tutor (`ai_tutor.py`)**: Hỗ trợ giải thích bản chất vật lý, hướng dẫn giải bài tập và tra cứu nhanh công thức.
 5. **PyTorch Physics Neural Network (`model.py` & `train.py`)**: Mô hình Deep Learning xấp xỉ các quy luật vật lý phi tuyến (động học, cộng hưởng, khúc xạ, bán rã).

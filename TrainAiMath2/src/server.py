@@ -26,8 +26,6 @@ PHYSICS_CATEGORIES = {
     "optics",
     "thermodynamics",
     "nuclear_quantum",
-    "physics_true_false",
-    "physics_short_answer",
 }
 
 def is_physics_subject_or_category(subject_name: Optional[str], category: Optional[str]) -> bool:

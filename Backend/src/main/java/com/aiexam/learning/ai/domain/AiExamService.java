@@ -297,8 +297,6 @@ public class AiExamService {
             case "optics" -> "Quang học & Thấu kính";
             case "thermodynamics" -> "Nhiệt học & Khí lý tưởng";
             case "nuclear_quantum" -> "Lượng tử & Vật lý hạt nhân";
-            case "physics_true_false" -> "Trắc nghiệm Đúng/Sai Vật lý";
-            case "physics_short_answer" -> "Trả lời ngắn Vật lý";
             default -> "Tổng hợp";
         };
     }

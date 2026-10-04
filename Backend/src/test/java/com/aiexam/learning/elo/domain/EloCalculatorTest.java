@@ -61,10 +61,11 @@ class EloCalculatorTest {
         java.util.UUID qEasy = java.util.UUID.randomUUID();
         java.util.UUID qHard = java.util.UUID.randomUUID();
 
-        var items = java.util.List.of(
-                new EloCalculator.ItemInput(qEasy, 900, java.math.BigDecimal.valueOf(5.0), java.math.BigDecimal.valueOf(5.0)),
-                new EloCalculator.ItemInput(qHard, 1500, java.math.BigDecimal.valueOf(5.0), java.math.BigDecimal.valueOf(5.0))
-        );
+        java.util.List<EloCalculator.ItemInput> items = new java.util.ArrayList<>();
+        for (int i = 0; i < 5; i++) {
+            items.add(new EloCalculator.ItemInput(qEasy, 900, com.aiexam.learning.question.domain.Difficulty.BEGINNER, java.math.BigDecimal.ONE, java.math.BigDecimal.ONE));
+            items.add(new EloCalculator.ItemInput(qHard, 1500, com.aiexam.learning.question.domain.Difficulty.ADVANCED, java.math.BigDecimal.ONE, java.math.BigDecimal.ONE));
+        }
 
         var req = new EloCalculator.AdvancedCalculationRequest(
                 1200,
@@ -81,6 +82,7 @@ class EloCalculatorTest {
 
         var result = EloCalculator.calculateAdvanced(req);
 
+        assertThat(result.rawEloGained()).isGreaterThan(0.0);
         assertThat(result.eloAfter()).isGreaterThan(1200);
         assertThat(result.streakMultiplier()).isGreaterThan(1.0);
         assertThat(result.timeMultiplier()).isGreaterThan(1.0);
@@ -91,7 +93,7 @@ class EloCalculatorTest {
     }
 
     @Test
-    void calculateAdvanced_easy3Questions_gainsPointNineRawElo() {
+    void calculateAdvanced_easy3Questions_gainsPointFourFiveRawElo() {
         var items = java.util.List.of(
                 new EloCalculator.ItemInput(java.util.UUID.randomUUID(), 900, com.aiexam.learning.question.domain.Difficulty.BEGINNER, java.math.BigDecimal.ONE, java.math.BigDecimal.ONE),
                 new EloCalculator.ItemInput(java.util.UUID.randomUUID(), 900, com.aiexam.learning.question.domain.Difficulty.BEGINNER, java.math.BigDecimal.ONE, java.math.BigDecimal.ONE),
@@ -112,12 +114,12 @@ class EloCalculatorTest {
         );
 
         var result = EloCalculator.calculateAdvanced(req);
-        // 3 questions * 0.3 = 0.9 raw Elo gain for commensurate user (Elo <= 900)
-        assertThat(result.rawEloGained()).isEqualTo(0.9, org.assertj.core.data.Offset.offset(0.001));
+        // 3 questions * 0.15 = 0.45 raw Elo gain for commensurate user (Elo <= 900)
+        assertThat(result.rawEloGained()).isEqualTo(0.45, org.assertj.core.data.Offset.offset(0.001));
     }
 
     @Test
-    void calculateAdvanced_hard20Questions_gainsTenRawElo() {
+    void calculateAdvanced_hard20Questions_gainsFiveRawElo() {
         java.util.List<EloCalculator.ItemInput> items = new java.util.ArrayList<>();
         for (int i = 0; i < 20; i++) {
             items.add(new EloCalculator.ItemInput(
@@ -143,12 +145,12 @@ class EloCalculatorTest {
         );
 
         var result = EloCalculator.calculateAdvanced(req);
-        // 20 questions * 0.5 = 10.0 raw Elo gain (user Elo 1000 <= question Elo 1400)
-        assertThat(result.rawEloGained()).isEqualTo(10.0, org.assertj.core.data.Offset.offset(0.001));
+        // 20 questions * 0.25 = 5.0 raw Elo gain (user Elo 1000 <= question Elo 1400)
+        assertThat(result.rawEloGained()).isEqualTo(5.0, org.assertj.core.data.Offset.offset(0.001));
     }
 
     @Test
-    void calculateAdvanced_medium20Questions_gainsEightRawElo() {
+    void calculateAdvanced_medium20Questions_gainsFourRawElo() {
         java.util.List<EloCalculator.ItemInput> items = new java.util.ArrayList<>();
         for (int i = 0; i < 20; i++) {
             items.add(new EloCalculator.ItemInput(
@@ -174,8 +176,41 @@ class EloCalculatorTest {
         );
 
         var result = EloCalculator.calculateAdvanced(req);
-        // 20 questions * 0.4 = 8.0 raw Elo gain (user Elo 1000 <= question Elo 1100)
-        assertThat(result.rawEloGained()).isEqualTo(8.0, org.assertj.core.data.Offset.offset(0.001));
+        // 20 questions * 0.20 = 4.0 raw Elo gain (user Elo 1000 <= question Elo 1100)
+        assertThat(result.rawEloGained()).isEqualTo(4.0, org.assertj.core.data.Offset.offset(0.001));
+    }
+
+    @Test
+    void calculateAdvanced_whenUserFailsEasyQuestions_eloDecreasesWithPenalty() {
+        // High Elo user (1400) failing 10 Easy questions (900 Elo)
+        java.util.List<EloCalculator.ItemInput> items = new java.util.ArrayList<>();
+        for (int i = 0; i < 10; i++) {
+            items.add(new EloCalculator.ItemInput(
+                    java.util.UUID.randomUUID(),
+                    900,
+                    com.aiexam.learning.question.domain.Difficulty.BEGINNER,
+                    java.math.BigDecimal.ONE,
+                    java.math.BigDecimal.ZERO // 0 correct
+            ));
+        }
+
+        var req = new EloCalculator.AdvancedCalculationRequest(
+                1400,
+                900,
+                java.math.BigDecimal.ZERO,
+                java.math.BigDecimal.valueOf(10.0),
+                items,
+                600,
+                10,
+                5,
+                0,
+                24
+        );
+
+        var result = EloCalculator.calculateAdvanced(req);
+        // User should lose Elo
+        assertThat(result.eloDelta()).isLessThan(0);
+        assertThat(result.eloAfter()).isLessThan(1400);
     }
 
     @Test
@@ -201,8 +236,8 @@ class EloCalculatorTest {
         );
 
         var result = EloCalculator.calculateAdvanced(req);
-        // Without match penalty it would be 0.9. With 750 Elo gap penalty, it should be diminished to < 0.1
-        assertThat(result.rawEloGained()).isLessThan(0.10);
-        assertThat(result.rawEloGained()).isGreaterThanOrEqualTo(0.04);
+        // Without match penalty it would be 0.45. With 750 Elo gap penalty, it should be diminished to < 0.05
+        assertThat(result.rawEloGained()).isLessThan(0.05);
+        assertThat(result.rawEloGained()).isGreaterThanOrEqualTo(0.02);
     }
 }

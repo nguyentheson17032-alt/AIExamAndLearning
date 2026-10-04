@@ -118,8 +118,6 @@ export function AiMathBankGenerator({
                         <option value="optics">Quang học & Thấu kính</option>
                         <option value="thermodynamics">Nhiệt học & Khí lý tưởng</option>
                         <option value="nuclear_quantum">Lượng tử & Vật lý hạt nhân</option>
-                        <option value="physics_true_false">Trắc nghiệm Đúng / Sai (Phần II)</option>
-                        <option value="physics_short_answer">Trắc nghiệm Trả lời ngắn (Phần III)</option>
                       </>
                     ) : (
                       <>

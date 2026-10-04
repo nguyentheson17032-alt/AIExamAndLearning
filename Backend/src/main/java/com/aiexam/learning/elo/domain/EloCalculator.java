@@ -15,10 +15,15 @@ public final class EloCalculator {
     public static final int MAX_QUESTION_ELO = 2200;
     public static final int ITEM_K_FACTOR = 4;
 
-    // Difficulty coefficients: Easy * 0.3, Medium * 0.4, Hard * 0.5
-    public static final double EASY_COEFFICIENT = 0.3;
-    public static final double MEDIUM_COEFFICIENT = 0.4;
-    public static final double HARD_COEFFICIENT = 0.5;
+    // Difficulty gain coefficients (halved): Easy * 0.15, Medium * 0.20, Hard * 0.25
+    public static final double EASY_COEFFICIENT = 0.15;
+    public static final double MEDIUM_COEFFICIENT = 0.20;
+    public static final double HARD_COEFFICIENT = 0.25;
+
+    // Difficulty penalty coefficients when failing: Easy * 0.25 (harsher penalty for easy questions), Medium * 0.15, Hard * 0.10
+    public static final double EASY_PENALTY_COEFFICIENT = 0.25;
+    public static final double MEDIUM_PENALTY_COEFFICIENT = 0.15;
+    public static final double HARD_PENALTY_COEFFICIENT = 0.10;
 
     private EloCalculator() {}
 
@@ -77,6 +82,23 @@ public final class EloCalculator {
         }
     }
 
+    public static double difficultyPenaltyCoefficient(Difficulty difficulty, int fallbackElo) {
+        if (difficulty != null) {
+            return switch (difficulty) {
+                case BEGINNER -> EASY_PENALTY_COEFFICIENT;
+                case INTERMEDIATE -> MEDIUM_PENALTY_COEFFICIENT;
+                case ADVANCED, EXPERT -> HARD_PENALTY_COEFFICIENT;
+            };
+        }
+        if (fallbackElo < 1000) {
+            return EASY_PENALTY_COEFFICIENT;
+        } else if (fallbackElo < 1300) {
+            return MEDIUM_PENALTY_COEFFICIENT;
+        } else {
+            return HARD_PENALTY_COEFFICIENT;
+        }
+    }
+
     public static double levelMatchMultiplier(int userElo, int targetElo) {
         if (targetElo >= userElo) {
             return 1.0;
@@ -84,6 +106,19 @@ public final class EloCalculator {
         double exponent = (userElo - targetElo) / 400.0;
         double match = 2.0 / (1.0 + Math.pow(10.0, exponent));
         return Math.max(0.05, match);
+    }
+
+    public static double levelPenaltyMultiplier(int userElo, int targetElo) {
+        if (userElo <= targetElo) {
+            // Làm sai câu khó hơn trình độ -> phạt nhẹ
+            double exponent = (targetElo - userElo) / 400.0;
+            double match = 2.0 / (1.0 + Math.pow(10.0, exponent));
+            return Math.max(0.1, match);
+        }
+        // Làm sai câu dễ hơn trình độ -> phạt nặng
+        double exponent = (userElo - targetElo) / 400.0;
+        double penalty = 1.0 + (1.0 - (2.0 / (1.0 + Math.pow(10.0, exponent))));
+        return Math.min(2.0, penalty);
     }
 
     public static int paperRating(int targetEloMin, int targetEloMax) {
@@ -139,10 +174,21 @@ public final class EloCalculator {
             double max = req.maxScore() != null && req.maxScore().signum() > 0 ? req.maxScore().doubleValue() : 10.0;
             actualScoreRatioSum = Math.max(0.0, Math.min(1.0, total / max));
             double coeff = difficultyCoefficient(null, paperElo);
+            double penaltyCoeff = difficultyPenaltyCoefficient(null, paperElo);
             double matchMultiplier = levelMatchMultiplier(userElo, paperElo);
-            rawEloGained = actualScoreRatioSum * coeff * matchMultiplier * 20.0;
+            double penaltyMultiplier = levelPenaltyMultiplier(userElo, paperElo);
+
+            if (actualScoreRatioSum >= 0.5) {
+                double excess = (actualScoreRatioSum - 0.5) * 2.0;
+                rawEloGained = excess * coeff * matchMultiplier * 10.0;
+            } else {
+                double deficit = (0.5 - actualScoreRatioSum) * 2.0;
+                rawEloGained = -deficit * penaltyCoeff * penaltyMultiplier * 10.0;
+            }
         } else {
-            // 1. Tính toán Elo cộng theo từng câu: Số câu đúng * Hệ số độ khó * Hệ số tương xứng trình độ
+            // 1. Tính toán Elo cộng/trừ theo từng câu:
+            // - Đúng: + (Tỷ lệ đúng * Hệ số độ khó * Hệ số tương xứng trình độ)
+            // - Sai:  - (Tỷ lệ sai * Hệ số phạt độ khó * Hệ số phạt trình độ)
             for (ItemInput item : items) {
                 double maxPts = item.maxPoints() != null && item.maxPoints().signum() > 0 ? item.maxPoints().doubleValue() : 1.0;
                 double earned = item.earnedScore() != null ? item.earnedScore().doubleValue() : 0.0;
@@ -151,8 +197,13 @@ public final class EloCalculator {
 
                 int qElo = item.questionElo() > 0 ? item.questionElo() : paperElo;
                 double coeff = difficultyCoefficient(item.difficulty(), qElo);
+                double penaltyCoeff = difficultyPenaltyCoefficient(item.difficulty(), qElo);
                 double matchMultiplier = levelMatchMultiplier(userElo, qElo);
-                rawEloGained += itemRatio * coeff * matchMultiplier;
+                double penaltyMultiplier = levelPenaltyMultiplier(userElo, qElo);
+
+                double itemGain = itemRatio * coeff * matchMultiplier;
+                double itemPenalty = (1.0 - itemRatio) * penaltyCoeff * penaltyMultiplier;
+                rawEloGained += (itemGain - itemPenalty);
 
                 double itemExpected = expectedScore(userElo, qElo);
                 expectedScoreSum += weight * itemExpected;
@@ -172,15 +223,15 @@ public final class EloCalculator {
         // 3. Dynamic K-Factor
         int dynamicK = resolveDynamicKFactor(req.previousAttemptsCount(), userElo, req.defaultKFactor());
 
-        // 4. Streak / Performance Multiplier
+        // 4. Streak / Performance Multiplier (chỉ nhân khi bài thi dương điểm Elo)
         double streakMultiplier = 1.0;
-        if (actualScoreRatioSum >= 0.80 && req.recentStreaks() > 0) {
+        if (rawEloGained > 0 && actualScoreRatioSum >= 0.80 && req.recentStreaks() > 0) {
             streakMultiplier = 1.0 + Math.min(0.25, 0.05 * req.recentStreaks());
         }
 
-        // 5. Time-Efficiency Multiplier (Thưởng giải nhanh chính xác)
+        // 5. Time-Efficiency Multiplier (Thưởng giải nhanh chính xác khi điểm tốt và Elo dương)
         double timeMultiplier = 1.0;
-        if (actualScoreRatioSum >= 0.70 && req.paperDurationMinutes() > 0) {
+        if (rawEloGained > 0 && actualScoreRatioSum >= 0.70 && req.paperDurationMinutes() > 0) {
             double targetSeconds = req.paperDurationMinutes() * 60.0;
             double timeRatio = (double) req.timeSpentSeconds() / targetSeconds;
             if (timeRatio >= 0.30 && timeRatio <= 0.80) {
@@ -188,8 +239,8 @@ public final class EloCalculator {
             }
         }
 
-        // 6. Tổng hợp biến thiên Elo: rawEloGained * Multipliers
-        double finalDelta = rawEloGained * streakMultiplier * timeMultiplier;
+        // 6. Tổng hợp biến thiên Elo: rawEloGained * Multipliers (nếu âm thì giữ nguyên)
+        double finalDelta = rawEloGained > 0 ? (rawEloGained * streakMultiplier * timeMultiplier) : rawEloGained;
 
         int eloAfter = Math.max(MIN_ELO, (int) Math.round(userElo + finalDelta));
         int eloDelta = eloAfter - userElo;

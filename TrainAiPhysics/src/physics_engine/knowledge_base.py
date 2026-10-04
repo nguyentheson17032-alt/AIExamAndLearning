@@ -49,8 +49,6 @@ class PhysicsKnowledgeBase:
             {"id": "optics", "name": "Quang hình học & Thấu kính"},
             {"id": "thermodynamics", "name": "Nhiệt học & Khí lý tưởng"},
             {"id": "nuclear_quantum", "name": "Lượng tử ánh sáng & Vật lý hạt nhân"},
-            {"id": "physics_true_false", "name": "Trắc nghiệm Đúng / Sai (Phần II)"},
-            {"id": "physics_short_answer", "name": "Trắc nghiệm Trả lời ngắn (Phần III)"},
         ]
 
     @classmethod

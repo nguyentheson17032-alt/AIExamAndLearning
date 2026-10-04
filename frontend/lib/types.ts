@@ -276,9 +276,7 @@ export type PhysicsCategory =
   | "circuits_electromagnetism"
   | "optics"
   | "thermodynamics"
-  | "nuclear_quantum"
-  | "physics_true_false"
-  | "physics_short_answer";
+  | "nuclear_quantum";
 
 export type MathCategory =
   | "linear"

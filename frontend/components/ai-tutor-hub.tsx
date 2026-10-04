@@ -179,8 +179,6 @@ export function AiTutorHub({ initialSubjects = [] }: AiTutorHubProps) {
                     <option value="optics">Quang học & Thấu kính</option>
                     <option value="thermodynamics">Nhiệt học & Khí lý tưởng</option>
                     <option value="nuclear_quantum">Lượng tử & Vật lý hạt nhân</option>
-                    <option value="physics_true_false">Trắc nghiệm Đúng / Sai (Phần II)</option>
-                    <option value="physics_short_answer">Trắc nghiệm Trả lời ngắn (Phần III)</option>
                   </>
                 ) : (
                   <>
@@ -297,10 +295,10 @@ export function AiTutorHub({ initialSubjects = [] }: AiTutorHubProps) {
                 Làm đề thi chính thức ↗
               </Link>
               <Link
-                href="/papers"
+                href="/subjects"
                 className="rounded-md border border-emerald-600/40 px-2.5 py-1 font-semibold hover:bg-emerald-600 hover:text-white transition"
               >
-                Xem mục Papers ↗
+                Xem danh sách Môn học ↗
               </Link>
             </div>
           </div>

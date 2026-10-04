@@ -1,6 +1,6 @@
 import { EmptyState } from "@/components/empty-state";
 import { PageHeader } from "@/components/page-header";
-import { StartAttemptButton } from "@/components/start-attempt-button";
+import { PaperSetFilterList } from "@/components/paper-set-filter-list";
 import { backendFetch } from "@/lib/backend";
 import { requireUser } from "@/lib/guards";
 import type { PaperSet } from "@/lib/types";
@@ -25,7 +25,7 @@ export default async function SubjectPaperSetPage({
         description={`${set.academicYear ?? ""} · ${set.paperCount} đề · thang điểm 10, Elo + điểm đạt được`.trim()}
       />
       <p className="mb-6 text-sm">
-        <Link href={`/subjects/${id}`} className="text-accent hover:underline">
+        <Link href={`/subjects/${id}`} className="text-accent hover:underline font-medium">
           ← Quay lại môn học
         </Link>
       </p>
@@ -33,23 +33,9 @@ export default async function SubjectPaperSetPage({
       {set.papers.length === 0 ? (
         <EmptyState title="Bộ đề trống" description="Chưa có đề nào trong bộ này." />
       ) : (
-        <ol className="space-y-3">
-          {set.papers.map((paper) => (
-            <li
-              key={paper.id}
-              className="flex flex-wrap items-center justify-between gap-4 rounded-xl border border-line bg-card p-5"
-            >
-              <div>
-                <p className="text-xs text-muted">
-                  Đề số {paper.examNumber ?? "—"} · {paper.durationMinutes} phút · {paper.questionCount} câu
-                </p>
-                <h2 className="mt-1 font-medium">{paper.title}</h2>
-              </div>
-              <StartAttemptButton paperId={paper.id} />
-            </li>
-          ))}
-        </ol>
+        <PaperSetFilterList papers={set.papers} />
       )}
     </>
   );
 }
+

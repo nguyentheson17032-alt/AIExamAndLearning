@@ -7,8 +7,6 @@ Hỗ trợ các chuyên đề chuẩn THPT & Tuyển sinh:
 4. Quang học & Thấu kính (Optics)
 5. Nhiệt học & Khí lý tưởng (Thermodynamics & Ideal Gas)
 6. Lượng tử ánh sáng & Vật lý hạt nhân (Quantum & Nuclear Physics)
-7. Trắc nghiệm Đúng / Sai 4 ý a-b-c-d (Phần II Chuẩn Bộ GD&ĐT 2025)
-8. Trắc nghiệm Trả lời ngắn (Phần III Chuẩn Bộ GD&ĐT 2025)
 """
 
 import random
@@ -977,99 +975,6 @@ class PhysicsGenerator:
             }
 
     # -------------------------------------------------------------
-    # 7. TRẮC NGHIỆM ĐÚNG / SAI 4 Ý a-b-c-d (PHẦN II)
-    # -------------------------------------------------------------
-    @classmethod
-    def generate_physics_true_false(cls, difficulty: str = "medium") -> Dict[str, Any]:
-        """Sinh câu hỏi trắc nghiệm Đúng / Sai chùm 4 ý chuẩn cấu trúc Bộ GD&ĐT 2025."""
-        m = random.choice([0.1, 0.2, 0.4]) # kg
-        k = random.choice([40, 100, 160]) # N/m
-        omega = round(math.sqrt(k / m), 2)
-        A = random.choice([4, 5, 8, 10]) # cm
-        vmax = round(omega * A, 2)
-        W = round(0.5 * k * ((A / 100) ** 2), 4)
-
-        stem = f"Một con lắc lò xo gồm một vật nhỏ có khối lượng $m = {m}\\text{{ kg}}$ gắn vào lò xo có độ cứng $k = {k}\\text{{ N/m}}$ dao động điều hòa trên trục Ox nằm ngang với phương trình $x = {A}\\cos({omega}t - \\frac{{\\pi}}{{3}})\\text{{ cm}}$.\n\n" \
-               f"Xét tính Đúng / Sai của các nhận định sau:\n" \
-               f"**a)** Tần số góc của dao động là $\\omega = {omega}\\text{{ rad/s}}$.\n" \
-               f"**b)** Tốc độ cực đại của vật là $v_{{\\max}} = {vmax}\\text{{ cm/s}}$.\n" \
-               f"**c)** Cơ năng của con lắc lò xo là $W = {round(W*10, 4)}\\text{{ J}}$.\n" \
-               f"**d)** Tại thời điểm ban đầu $t = 0$, vật đang ở vị trí có li độ $x = +{A/2}\\text{{ cm}}$ và chuyển động theo chiều dương."
-
-        sol = f"**Phân tích chi tiết từng ý:**\n" \
-              f"- **Ý a (ĐÚNG):** Tần số góc $\\omega = \\sqrt{{k/m}} = \\sqrt{{{k}/{m}}} = {omega}\\text{{ rad/s}}$.\n" \
-              f"- **Ý b (ĐÚNG):** Tốc độ cực đại $v_{{\\max}} = \\omega A = {omega} \\times {A} = {vmax}\\text{{ cm/s}}$.\n" \
-              f"- **Ý c (SAI):** Cơ năng $W = \\frac{{1}}{{2}} k A^2 = 0.5 \\times {k} \\times ({A/100})^2 = {W}\\text{{ J}}$ (không phải ${round(W*10, 4)}\\text{{ J}}$).\n" \
-              f"- **Ý d (ĐÚNG):** Tại $t = 0$, pha ban đầu $\\varphi = -\\pi/3 < 0 \\Rightarrow x = {A}\\cos(-\\pi/3) = +{A/2}\\text{{ cm}}$ và vận tốc $v = -\\omega A\\sin(-\\pi/3) > 0$ (vật đi theo chiều dương)."
-
-        return {
-            "id": f"phy_tf_{random.randint(10000, 99999)}",
-            "category": "physics_true_false",
-            "category_name": "Trắc nghiệm Đúng/Sai (Phần II)",
-            "difficulty": difficulty,
-            "title": "Trắc nghiệm Đúng/Sai: Khảo sát dao động con lắc lò xo",
-            "question": stem,
-            "hints": [
-                f"Kiểm tra tần số góc $\\omega = \\sqrt{{k/m}} = {omega}$ rad/s.",
-                f"Cơ năng tính bằng đơn vị Joules: $W = \\frac{{1}}{{2}} k A^2 = {W}$ J.",
-                "Pha ban đầu âm $\\Rightarrow$ vật đi theo chiều dương trục tọa độ."
-            ],
-            "solution": sol,
-            "final_answer": "a: Đúng, b: Đúng, c: Sai, d: Đúng",
-            "numeric_answer": "Đ Đ S Đ",
-            "roots": [1.0, 1.0, 0.0, 1.0],
-            "options": [
-                "a: Đúng | b: Đúng | c: Sai | d: Đúng",
-                "a: Đúng | b: Sai | c: Sai | d: Đúng",
-                "a: Sai | b: Đúng | c: Đúng | d: Sai",
-                "a: Đúng | b: Đúng | c: Đúng | d: Sai"
-            ],
-            "correct_option": 0,
-            "subject_name": "Vật lý"
-        }
-
-    # -------------------------------------------------------------
-    # 8. TRẮC NGHIỆM TRẢ LỜI NGẮN (PHẦN III)
-    # -------------------------------------------------------------
-    @classmethod
-    def generate_physics_short_answer(cls, difficulty: str = "medium") -> Dict[str, Any]:
-        """Sinh câu hỏi trắc nghiệm Trả lời ngắn điền số chuẩn cấu trúc Bộ GD&ĐT 2025."""
-        diff = difficulty.lower()
-        # Mạch RLC hoặc Dao động sóng
-        R = random.choice([30, 40, 50, 60])
-        ZL = random.choice([50, 80, 100])
-        ZC = random.choice([10, 20, 40])
-        Z = round(math.sqrt(R**2 + (ZL - ZC)**2), 1)
-
-        question = f"**[Câu hỏi Trả lời ngắn]**\n" \
-                   f"Đặt điện áp xoay chiều có giá trị hiệu dụng $U = 120\\text{{ V}}$ vào hai đầu đoạn mạch RLC nối tiếp có $R = {R}\\ \\Omega$, $Z_L = {ZL}\\ \\Omega$ và $Z_C = {ZC}\\ \\Omega$.\n" \
-                   f"Hãy tính tổng trở $Z$ của toàn mạch theo đơn vị Ohm $(\\Omega)$. *(Điền đáp số số học dưới dạng số nguyên hoặc số thập phân)*."
-
-        sol = f"**Phương pháp:** Tổng trở đoạn mạch RLC nối tiếp:\n" \
-              f"$$ Z = \\sqrt{{R^2 + (Z_L - Z_C)^2}} $$\n" \
-              f"**Thay số:** $Z = \\sqrt{{{R}^2 + ({ZL} - {ZC})^2}} = \\sqrt{{{R**2} + {(ZL - ZC)**2}}} = {Z}\\ \\Omega$.\n" \
-              f"**Đáp số:** **{format_num(Z)}**."
-
-        return {
-            "id": f"phy_sa_{random.randint(10000, 99999)}",
-            "category": "physics_short_answer",
-            "category_name": "Trắc nghiệm Trả lời ngắn (Phần III)",
-            "difficulty": diff,
-            "title": "Tính tổng trở mạch xoay chiều RLC",
-            "question": question,
-            "hints": [
-                "Công thức tổng trở: $Z = \\sqrt{R^2 + (Z_L - Z_C)^2}$.",
-                f"Thay số: $Z = \\sqrt{{{R}^2 + {(ZL - ZC)**2}}}$.",
-                f"Đáp số là {format_num(Z)}."
-            ],
-            "solution": sol,
-            "final_answer": format_num(Z),
-            "numeric_answer": format_num(Z),
-            "roots": [float(Z)],
-            "subject_name": "Vật lý"
-        }
-
-    # -------------------------------------------------------------
     # BATCH GENERATOR FOR PHYSICS
     # -------------------------------------------------------------
     @classmethod
@@ -1082,8 +987,6 @@ class PhysicsGenerator:
             "optics": cls.generate_optics,
             "thermodynamics": cls.generate_thermodynamics,
             "nuclear_quantum": cls.generate_nuclear_quantum,
-            "physics_true_false": cls.generate_physics_true_false,
-            "physics_short_answer": cls.generate_physics_short_answer,
         }
 
         diff_clean = str(difficulty).lower()

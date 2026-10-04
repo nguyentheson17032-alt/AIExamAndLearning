@@ -4,8 +4,7 @@ Hỗ trợ:
 - Tách số và đơn vị vật lý (m/s, cm, m, s, Hz, rad/s, A, mA, V, Ohm, W, kW, J, kJ, atm, Pa, K, °C, eV, u...)
 - Kiểm tra dung sai làm tròn (relative tolerance 2%)
 - Chấm điểm trắc nghiệm 4 đáp án (A, B, C, D)
-- Chấm điểm trắc nghiệm Đúng / Sai (Phần II)
-- Chấm điểm câu hỏi Trả lời ngắn (Phần III)
+- Chấm điểm bài tập số học, định lượng có đơn vị vật lý
 - Nhận xét sư phạm chi tiết và chỉ ra nguyên nhân lỗi sai.
 """
 
@@ -92,8 +91,8 @@ class PhysicsEvaluator:
                             "solution": solution
                         }
 
-        # 2. Câu hỏi trắc nghiệm Đúng / Sai 4 ý (Phần II)
-        if problem.get("category") == "physics_true_false" or "đúng" in final_answer.lower() or "sai" in final_answer.lower():
+        # 2. Câu hỏi trắc nghiệm Đúng / Sai
+        if "đúng" in final_answer.lower() or "sai" in final_answer.lower():
             # Kiểm tra chuỗi chứa Đ/S
             user_lower = raw_user.lower()
             if "đ" in user_lower or "s" in user_lower or "đúng" in user_lower or "sai" in user_lower:
@@ -109,7 +108,7 @@ class PhysicsEvaluator:
                         "solution": solution
                     }
 
-        # 3. Câu hỏi Trả lời ngắn / Số học có đơn vị (Phần III & Tính toán)
+        # 3. Câu hỏi Số học có đơn vị & Tính toán
         expected_val = parse_physical_value(numeric_ans_str) or parse_physical_value(final_answer)
         user_val = parse_physical_value(raw_user)
 
