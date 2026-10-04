@@ -45,7 +45,8 @@ export default async function AttemptDetailPage({ params }: { params: Promise<{ 
           ) : null}
           {paper.questions.toSorted((a, b) => a.sortOrder - b.sortOrder).map((item, index) => {
             const answer = answerByQuestion.get(item.questionId);
-            const selected = item.question.choices.find((choice) => choice.id === answer?.selectedChoiceId);
+            const choices = item.question.choices ?? [];
+            const selected = choices.find((choice) => choice.id === answer?.selectedChoiceId);
             return (
               <section key={item.questionId} className="rounded-xl border border-line bg-card p-5">
                 <p className="text-xs text-muted">
@@ -53,7 +54,7 @@ export default async function AttemptDetailPage({ params }: { params: Promise<{ 
                   {item.sectionTitle ? ` · ${item.sectionTitle}` : ""}
                 </p>
                 <p className="mt-1">
-                  <StemText text={promptStem(item.question.stem, item.question.choices.length > 0)} imageId={item.question.stemImageId} />
+                  <StemText text={promptStem(item.question.stem, choices.length > 0)} imageId={item.question.stemImageId} />
                 </p>
                 <p className="mt-2 text-sm">Bài làm: {submittedWork(selected, answer?.textAnswer)}</p>
                 <p className="mt-1 text-sm">

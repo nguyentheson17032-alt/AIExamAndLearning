@@ -11,19 +11,17 @@ export default async function PapersPage() {
   const user = await requireUser();
   const teacher = isTeacher(user);
   const classrooms = teacher ? [] : await backendFetch<ClassroomSummary[]>("/api/v1/classrooms");
-  const [papers, sets] =
-    teacher || classrooms.length === 0
-      ? [null, [] as PaperSet[]]
-      : await Promise.all([
-          backendFetch<PageResponse<Paper>>("/api/v1/papers?size=200"),
-          backendFetch<PaperSet[]>("/api/v1/paper-sets"),
-        ]);
-  const grouped = papers ? groupPapers(papers.content, setTitlesById(sets)) : null;
+  const [allPapersPage, sets] = await Promise.all([
+    backendFetch<PageResponse<Paper>>("/api/v1/papers?size=200").catch(() => null),
+    backendFetch<PaperSet[]>("/api/v1/paper-sets").catch(() => [] as PaperSet[]),
+  ]);
+  const allPapers = allPapersPage?.content || [];
+  const grouped = allPapers.length > 0 ? groupPapers(allPapers, setTitlesById(sets)) : null;
   const groups = grouped ? PAPER_GROUPS.filter((group) => grouped[group.id].length > 0) : PAPER_GROUPS;
 
   return (
     <>
-      <PageHeader title="Papers" description={teacher ? "Chọn nhóm để xem đề." : "Bài trong lớp của bạn."}>
+      <PageHeader title="Papers" description={teacher ? "Chọn nhóm để xem đề hoặc chọn làm bài ngay bên dưới." : "Bài trong lớp và đề luyện tập của bạn."}>
         {teacher ? (
           <>
             <Link href="/papers/new" className="rounded-md bg-accent px-3 py-2 text-sm text-white hover:bg-accent-hover">
@@ -38,10 +36,8 @@ export default async function PapersPage() {
           </>
         ) : null}
       </PageHeader>
-      {!teacher && classrooms.length === 0 ? (
-        <EmptyState title="Chưa có lớp" description="Khi giáo viên thêm bạn vào lớp, bài sẽ hiện ở đây." />
-      ) : groups.length === 0 ? (
-        <EmptyState title="Chưa có bài" description="Lớp chưa có bài nào." />
+      {!teacher && classrooms.length === 0 && allPapers.length === 0 ? (
+        <EmptyState title="Chưa có lớp" description="Khi giáo viên thêm bạn vào lớp hoặc khi sinh đề AI, bài sẽ hiện ở đây." />
       ) : (
         <ul className="grid gap-3 sm:grid-cols-2">
           {groups.map((group) => (
@@ -55,6 +51,8 @@ export default async function PapersPage() {
           ))}
         </ul>
       )}
+
+
     </>
   );
 }

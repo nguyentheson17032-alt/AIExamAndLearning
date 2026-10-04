@@ -8,11 +8,11 @@ import static org.assertj.core.api.Assertions.assertThat;
 class AiPracticeRulesTest {
 
     @Test
-    void durationMinutes_isQuestionCountTimesTwoPointFive() {
-        assertThat(AiPracticeRules.durationMinutes(1)).isEqualTo(3);
-        assertThat(AiPracticeRules.durationMinutes(4)).isEqualTo(10);
-        assertThat(AiPracticeRules.durationMinutes(5)).isEqualTo(13);
-        assertThat(AiPracticeRules.durationMinutes(10)).isEqualTo(25);
+    void durationMinutes_isQuestionCountTimesZeroPointFive() {
+        assertThat(AiPracticeRules.durationMinutes(1)).isEqualTo(1);
+        assertThat(AiPracticeRules.durationMinutes(4)).isEqualTo(2);
+        assertThat(AiPracticeRules.durationMinutes(5)).isEqualTo(3);
+        assertThat(AiPracticeRules.durationMinutes(10)).isEqualTo(5);
     }
 
     @Test

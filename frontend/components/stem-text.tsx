@@ -1,3 +1,5 @@
+import { MathText } from "@/components/math-text";
+
 const IMG = /(\[\[img:[^\]]+\]\])/g;
 const INLINE_CHOICES = /\sA\.\s/;
 const SNAPSHOT = /\[\[img:(\/ts10\/q\/[^\]]+)\]\]/;
@@ -51,11 +53,10 @@ export function StemText({
         const match = /^\[\[img:([^\]]+)\]\]$/.exec(part);
         if (!match) {
           return (
-            <span key={index} className="whitespace-pre-wrap">
-              {part}
-            </span>
+            <MathText key={index} text={part} />
           );
         }
+
         return (
           <img
             key={index}

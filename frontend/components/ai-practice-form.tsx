@@ -49,7 +49,7 @@ export function AiPracticeForm({ subjects }: { subjects: Subject[] }) {
           value={durationMinutes}
           className="mt-1 w-full rounded-md border border-line bg-card px-3 py-2"
         />
-        <span className="mt-1 block text-xs text-muted">Tự tính: số câu × 2.5</span>
+        <span className="mt-1 block text-xs text-muted">Tự tính: 30 giây / câu (số câu × 0.5 phút)</span>
       </label>
       <SubmitButton>AI practice paper</SubmitButton>
     </form>

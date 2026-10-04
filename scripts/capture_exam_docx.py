@@ -474,7 +474,12 @@ def labeled_answer(text: str) -> str:
         value = match.group(1).strip()
         if not value and index + 1 < len(lines):
             value = lines[index + 1].strip()
+        if ":" in value:
+            value = value.rsplit(":", 1)[-1].strip()
         number = leading_number(value)
+        if not number:
+            found = re.search(r"-?\d+(?:[.,]\d+)?", value)
+            number = found.group(0) if found else ""
         if number:
             return number
     return ""
@@ -585,6 +590,23 @@ def short_answer_token(text: str) -> str | None:
     return number
 
 
+def numbered_letter_keys(lines: list[str]) -> list[str]:
+    """Tables laid out as ``1 / A / 7 / C`` instead of one letter row."""
+    pairs: dict[int, str] = {}
+    tokens = [line.strip() for line in lines]
+    index = 0
+    while index < len(tokens) - 1:
+        number, letter = tokens[index], tokens[index + 1]
+        if re.fullmatch(r"\d{1,2}", number) and re.fullmatch(r"[A-D]", letter):
+            pairs[int(number)] = letter
+            index += 2
+            continue
+        index += 1
+    if len(pairs) < 4 or sorted(pairs) != list(range(1, len(pairs) + 1)):
+        return []
+    return [pairs[number] for number in range(1, len(pairs) + 1)]
+
+
 def letter_run_after(lines: list[str], start: int) -> list[str]:
     run: list[str] = []
     for line in lines[start:]:
@@ -618,6 +640,9 @@ def part1_keys_from(lines: list[str]) -> list[str]:
         run = letter_run_after(lines, index + 1)
         if run:
             collected.extend(run)
+    numbered = numbered_letter_keys(lines)
+    if len(numbered) > len(collected):
+        return numbered
     if len(collected) >= 4:
         return collected
     return longest_letter_run(lines)
@@ -710,6 +735,9 @@ def part3_keys_from(lines: list[str]) -> list[str]:
         tail = lines[index + 1:]
         if paired_answer_column(tail):
             break
+        compact = [line.strip() for line in tail if line.strip()]
+        if compact and compact == [str(number) for number in range(1, len(compact) + 1)]:
+            continue
         values = []
         for follow in tail:
             token = integer_answer(follow)

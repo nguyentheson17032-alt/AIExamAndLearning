@@ -3,19 +3,37 @@ import { PageHeader } from "@/components/page-header";
 import { backendFetch } from "@/lib/backend";
 import { requireUser } from "@/lib/guards";
 import { isTeacher } from "@/lib/session";
-import type { ClassroomSummary, PageResponse, Paper, Subject } from "@/lib/types";
+import type { ClassroomDetail, ClassroomSummary, PageResponse, Subject } from "@/lib/types";
 import Link from "next/link";
 
 export default async function SubjectsPage() {
   const user = await requireUser();
   const teacher = isTeacher(user);
-  const [page, classrooms, papers] = await Promise.all([
+  const [page, classrooms] = await Promise.all([
     backendFetch<PageResponse<Subject>>("/api/v1/subjects?size=50"),
-    teacher ? Promise.resolve([] as ClassroomSummary[]) : backendFetch<ClassroomSummary[]>("/api/v1/classrooms"),
-    teacher ? Promise.resolve(null) : backendFetch<PageResponse<Paper>>("/api/v1/papers?size=200"),
+    teacher
+      ? Promise.resolve([] as ClassroomSummary[])
+      : backendFetch<ClassroomSummary[]>("/api/v1/classrooms").catch(() => [] as ClassroomSummary[]),
   ]);
-  const subjectIds = new Set((papers?.content ?? []).map((paper) => paper.subjectId));
-  const subjects = teacher ? page.content : page.content.filter((subject) => subjectIds.has(subject.id));
+
+  let subjects = page.content;
+
+  if (!teacher) {
+    const details = await Promise.all(
+      classrooms.map((c) => backendFetch<ClassroomDetail>(`/api/v1/classrooms/${c.id}`).catch(() => null)),
+    );
+    const subjectIds = new Set<string>();
+    for (const detail of details) {
+      if (detail?.papers) {
+        for (const paper of detail.papers) {
+          if (paper.subjectId) {
+            subjectIds.add(paper.subjectId);
+          }
+        }
+      }
+    }
+    subjects = page.content.filter((subject) => subjectIds.has(subject.id));
+  }
 
   return (
     <>
@@ -34,7 +52,7 @@ export default async function SubjectsPage() {
       ) : subjects.length === 0 ? (
         <EmptyState
           title={teacher ? "No subjects" : "Chưa có bài"}
-          description={teacher ? "Create a subject before adding questions." : "Lớp chưa có bài nào."}
+          description={teacher ? "Create a subject before adding questions." : "Các lớp bạn tham gia hiện chưa có đề bài nào."}
         />
       ) : (
         <ul className="grid gap-3 sm:grid-cols-2">

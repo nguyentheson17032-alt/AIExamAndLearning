@@ -127,6 +127,18 @@ class CaptureSplitTest(unittest.TestCase):
         self.assertEqual(part2, ["SSDD", "DDSD", "SSDD", "SDDS"])
         self.assertEqual(part3, ["3,0", "1,3", "9,7", "21", "163", "5,7"])
 
+    @unittest.skipUnless(
+        (Path.home() / "Downloads" / "thuvienhoclieu.com-De-thi-thu-TN-THPT-2026-Vat-Li-So-GD-Thanh-Hoa.docx").is_file(),
+        "Thanh Hoa physics docx is not in Downloads",
+    )
+    def test_thanh_hoa_column_answer_table(self):
+        path = Path.home() / "Downloads" / "thuvienhoclieu.com-De-thi-thu-TN-THPT-2026-Vat-Li-So-GD-Thanh-Hoa.docx"
+        rows = [classify_line(line) for line in paragraphs(path)]
+        part1, part2, part3 = parse_answer_tables(rows, 1)
+        self.assertEqual(part1, list("ABDCACCDDADAABBBBD"))
+        self.assertEqual(part2, ["SDDD", "DDDS", "DDSS", "DSDS"])
+        self.assertEqual(part3, [])
+
 
 if __name__ == "__main__":
     unittest.main()

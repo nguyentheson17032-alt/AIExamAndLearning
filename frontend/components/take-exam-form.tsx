@@ -129,7 +129,8 @@ export function TakeExamForm({
         {warning ? <p className="mt-1 text-sm">Còn dưới 1 phút</p> : null}
         {expired ? <p className="mt-1 text-sm">{pending ? "Hết giờ, đang nộp bài…" : "Hết giờ"}</p> : null}
       </div>
-      {state?.error ? <ProblemAlert message={state.error} /> : null}
+      {state && "error" in state && state.error ? <ProblemAlert message={state.error} /> : null}
+
       <section className="rounded-xl border border-line bg-card p-4">
         <p className="text-sm font-medium">Tiến độ làm bài</p>
         <p className="mt-1 text-xs text-muted">
@@ -223,40 +224,52 @@ function QuestionPrompt({
   onAnswer: (questionId: string, value: string) => void;
 }) {
   const question = item.question;
-  const written = isWrittenQuestion(question.type);
+  const choices = question.choices ?? [];
+  const written = isWrittenQuestion(question.type) || choices.length === 0;
   const snapshot = storedImageSrc(question.stemImageId, question.stem);
   const letterOnly = Boolean(snapshot && question.type === "MULTIPLE_CHOICE");
   const showThisStem = showStem || !snapshot;
+
   return (
     <div className="mt-4">
       <p className="text-xs text-muted">{item.itemLabel ?? question.type}</p>
       {showThisStem ? (
-        <p className="mt-2">
-          <StemText text={promptStem(question.stem, question.choices.length > 0)} imageId={question.stemImageId} />
-        </p>
+        <div className="mt-2 text-base leading-relaxed text-foreground">
+          <StemText
+            text={promptStem(question.stem, choices.length > 0)}
+            imageId={question.stemImageId}
+          />
+        </div>
       ) : null}
       {written ? (
         <textarea
           rows={question.type === "ESSAY" ? 6 : 3}
-          className="mt-4 w-full rounded-md border border-line px-3 py-2"
-          placeholder="Nhập đáp án"
+          className="mt-4 w-full rounded-md border border-line bg-surface/50 px-3 py-2 text-foreground focus:border-accent focus:outline-none"
+          placeholder="Nhập đáp án của bạn..."
           value={value}
           onChange={(event) => onAnswer(question.id, event.target.value)}
         />
       ) : (
         <div className="mt-4 space-y-2">
-          {question.choices.map((choice) => (
-            <label key={choice.id} className="flex items-start gap-2 text-sm">
+          {choices.map((choice) => (
+            <label
+              key={choice.id}
+              className={`flex items-start gap-2.5 rounded-lg border p-3 text-sm cursor-pointer transition-colors ${
+                value === choice.id
+                  ? "border-accent bg-accent/10 font-medium"
+                  : "border-line bg-surface/40 hover:bg-surface"
+              }`}
+            >
               <input
                 type="radio"
                 name={`choice-${question.id}`}
                 value={choice.id}
-                className="mt-1"
+                className="mt-1 accent-accent"
                 checked={value === choice.id}
                 onChange={() => onAnswer(question.id, choice.id)}
               />
-              <span>
-                <span className="font-medium">{choice.label}.</span>
+              <span className="flex-1">
+                <span className="font-bold mr-1">{choice.label}.</span>
                 {letterOnly ? null : (
                   <>
                     {" "}

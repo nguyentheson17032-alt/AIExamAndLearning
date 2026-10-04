@@ -1,18 +1,21 @@
 import { AddStudentForm } from "@/components/add-student-form";
+import { ClassroomPapersList } from "@/components/classroom-papers-list";
 import { PageHeader } from "@/components/page-header";
-import { RemovePaperButton } from "@/components/remove-paper-button";
 import { RenameClassroomForm } from "@/components/rename-classroom-form";
 import { RemoveStudentButton } from "@/components/remove-student-button";
 import { SharePapersForm } from "@/components/share-papers-form";
 import { backendFetch } from "@/lib/backend";
 import { requireUser } from "@/lib/guards";
-import type { ClassroomDetail, ShareOptions } from "@/lib/types";
-import Link from "next/link";
+import type { ClassroomDetail, PageResponse, ShareOptions, Subject } from "@/lib/types";
 
 export default async function ClassroomPage({ params }: { params: Promise<{ id: string }> }) {
   await requireUser();
   const { id } = await params;
-  const classroom = await backendFetch<ClassroomDetail>(`/api/v1/classrooms/${id}`);
+  const [classroom, subjectsPage] = await Promise.all([
+    backendFetch<ClassroomDetail>(`/api/v1/classrooms/${id}`),
+    backendFetch<PageResponse<Subject>>("/api/v1/subjects?size=100").catch(() => null),
+  ]);
+  const subjects = subjectsPage?.content ?? [];
   const options = classroom.teacher
     ? await backendFetch<ShareOptions>(`/api/v1/classrooms/${id}/papers/available`)
     : null;
@@ -38,26 +41,17 @@ export default async function ClassroomPage({ params }: { params: Promise<{ id: 
           <AddStudentForm classroomId={classroom.id}>
             <MemberList classroom={classroom} inset />
           </AddStudentForm>
-          <SharePapersForm classroomId={classroom.id} papers={options.papers} paperSets={options.paperSets} />
+          <SharePapersForm classroomId={classroom.id} papers={options.papers} paperSets={options.paperSets} subjects={subjects} />
         </div>
       ) : null}
       <section className="mb-8">
         <h2 className="mb-3 font-medium">Bài trong lớp</h2>
-        {classroom.papers.length === 0 ? (
-          <p className="text-sm text-muted">Chưa có bài nào trong lớp.</p>
-        ) : (
-          <ul className="divide-y divide-line rounded-xl border border-line bg-card">
-            {classroom.papers.map((paper) => (
-              <li key={paper.id} className="flex items-center justify-between gap-4 px-4 py-3">
-                <Link href={`/papers/${paper.id}`} className="min-w-0 flex-1 hover:text-accent">
-                  <span className="font-medium">{paper.title}</span>
-                  <span className="ml-2 text-sm text-muted">{paper.durationMinutes} phút</span>
-                </Link>
-                {classroom.teacher ? <RemovePaperButton classroomId={classroom.id} paperId={paper.id} /> : null}
-              </li>
-            ))}
-          </ul>
-        )}
+        <ClassroomPapersList
+          classroomId={classroom.id}
+          isTeacher={classroom.teacher}
+          papers={classroom.papers}
+          subjects={subjects}
+        />
       </section>
       {classroom.teacher ? null : <MemberList classroom={classroom} />}
     </>

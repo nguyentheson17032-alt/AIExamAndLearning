@@ -14,9 +14,11 @@ import org.springframework.web.bind.annotation.PathVariable;
 import org.springframework.web.bind.annotation.PostMapping;
 import org.springframework.web.bind.annotation.RequestBody;
 import org.springframework.web.bind.annotation.RequestMapping;
+import org.springframework.web.bind.annotation.RequestParam;
 import org.springframework.web.bind.annotation.RestController;
 
 import java.util.List;
+import java.util.Map;
 import java.util.UUID;
 
 @RestController
@@ -54,4 +56,43 @@ public class AiController {
     public AiJobResponse job(@PathVariable UUID id) {
         return aiExamService.getJob(id);
     }
+
+    @PostMapping("/tutor/chat")
+    public Map<String, Object> chatTutor(@RequestBody TutorChatRequest request) {
+        String reply = aiExamService.chatTutor(request.query(), request.currentProblem());
+        return Map.of("success", true, "reply", reply);
+    }
+
+    @PostMapping("/tutor/evaluate")
+    public Map<String, Object> evaluateMath(@RequestBody MathEvaluateRequest request) {
+        return aiExamService.evaluateMath(request.problem(), request.userAnswer());
+    }
+
+    @PostMapping("/tutor/generate")
+    public Map<String, Object> generateMathExercises(@RequestBody MathGenerateTutorRequest request) {
+        UUID userId = null;
+        try {
+            userId = CurrentUser.id();
+        } catch (Exception ignored) {}
+        return aiExamService.generateMathExercises(
+                userId,
+                request.getCategory(),
+                request.getDifficulty(),
+                request.getCount() == null ? 3 : request.getCount(),
+                request.getElo(),
+                request.getSubjectName()
+        );
+    }
+
+    @GetMapping("/tutor/predict")
+    public Map<String, Object> predictModels(@RequestParam(required = false, defaultValue = "2.0") Double x) {
+        return aiExamService.predictModels(x);
+    }
+
+    @PostMapping("/math/generate-bank")
+    public ResponseEntity<List<QuestionResponse>> generateMathToBank(@Valid @RequestBody MathGenerateBankRequest request) {
+        return ResponseEntity.status(HttpStatus.CREATED)
+                .body(aiExamService.generateMathToBank(CurrentUser.id(), request));
+    }
 }
+

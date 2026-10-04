@@ -18,7 +18,7 @@ export const PAPER_GROUPS: { id: PaperGroupId; code: string; title: string; desc
   {
     id: "practice",
     code: "PRACTICE",
-    title: "Đề practice",
+    title: "Đề AI practice",
     description: "Đề luyện tập và đề tạo theo Elo.",
   },
   {

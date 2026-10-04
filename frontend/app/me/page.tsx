@@ -1,32 +1,38 @@
 import { EmptyState } from "@/components/empty-state";
 import { PageHeader } from "@/components/page-header";
+import { PromotionChallengeCard } from "@/components/promotion-challenge-card";
 import { backendFetch } from "@/lib/backend";
 import { resolveEloAttemptIds } from "@/lib/elo-history";
 import { formatDateTime } from "@/lib/format-datetime";
 import { requireUser } from "@/lib/guards";
-import type { Attempt, EloEvent, PageResponse, UserProfile } from "@/lib/types";
+import type { Attempt, EloEvent, PageResponse, PromotionStatusResponse, UserProfile } from "@/lib/types";
 import Link from "next/link";
 
 export default async function MePage() {
   await requireUser();
-  const [profile, events, attempts] = await Promise.all([
+  const [profile, events, attempts, promotion] = await Promise.all([
     backendFetch<UserProfile>("/api/v1/me"),
     backendFetch<PageResponse<EloEvent>>("/api/v1/me/elo-events?size=30"),
     backendFetch<PageResponse<Attempt>>("/api/v1/attempts?size=100&sort=gradedAt,desc"),
+    backendFetch<PromotionStatusResponse>("/api/v1/me/promotion").catch(() => null),
   ]);
   const attemptIds = resolveEloAttemptIds(events.content, attempts.content);
   return (
     <>
       <PageHeader title={profile.displayName} description={`${profile.email} · ${profile.role}`} />
-      <div className="mb-8 grid gap-4 sm:grid-cols-2">
+      <div className="mb-6 grid gap-4 sm:grid-cols-2">
         <div className="rounded-xl border border-line bg-card p-5">
-          <p className="text-sm text-muted">Rank</p>
+          <p className="text-sm text-muted">Rank Hiện Tại</p>
           <p className="mt-1 text-2xl font-semibold">{profile.rankCode}</p>
         </div>
         <div className="rounded-xl border border-line bg-card p-5">
-          <p className="text-sm text-muted">Elo</p>
+          <p className="text-sm text-muted">Điểm Elo</p>
           <p className="mt-1 text-2xl font-semibold">{profile.eloRating}</p>
         </div>
+      </div>
+
+      <div className="mb-8">
+        <PromotionChallengeCard status={promotion} />
       </div>
       <h2 className="mb-3 font-medium">Elo history</h2>
       {events.content.length === 0 ? (

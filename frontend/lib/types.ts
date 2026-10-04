@@ -5,7 +5,7 @@ export type Difficulty = "BEGINNER" | "INTERMEDIATE" | "ADVANCED" | "EXPERT";
 export type BloomLevel = "REMEMBER" | "UNDERSTAND" | "APPLY" | "ANALYZE" | "EVALUATE" | "CREATE";
 export type ContentStatus = "DRAFT" | "PUBLISHED" | "ARCHIVED";
 export type QuestionSource = "UPLOAD" | "MANUAL" | "AI_GENERATED";
-export type PaperKind = "EXAM" | "ASSIGNMENT" | "PRACTICE";
+export type PaperKind = "EXAM" | "ASSIGNMENT" | "PRACTICE" | "PROMOTION";
 export type PaperSource = "MANUAL" | "AI_GENERATED";
 export type AttemptStatus = "IN_PROGRESS" | "SUBMITTED" | "GRADED";
 export type EloReason =
@@ -14,6 +14,22 @@ export type EloReason =
   | "MANUAL"
   | "PRACTICE";
 export type GradedBy = "AUTO" | "AI" | "TEACHER";
+
+export type PromotionStatusResponse = {
+  currentRank: RankCode;
+  targetRank: RankCode | null;
+  currentElo: number;
+  minEloThreshold: number;
+  eligible: boolean;
+  difficulty: Difficulty | null;
+  questionCount: number;
+  durationMinutes: number;
+  minPassingRatio: number;
+  requiredWins: number;
+  currentWins: number;
+  maxRankReached: boolean;
+  description: string;
+};
 
 export type SessionUser = {
   userId: string;
@@ -128,17 +144,30 @@ export type ClassroomMember = {
 export type ClassPaper = {
   id: string;
   subjectId: string;
+  subjectName?: string | null;
+  subjectCode?: string | null;
   title: string;
   kind: PaperKind;
   durationMinutes: number;
   status: ContentStatus;
+  questionCount?: number;
+  difficulty?: Difficulty;
+  targetEloMin?: number;
+  targetEloMax?: number;
+  examNumber?: number | null;
+  questionTypes?: QuestionType[];
+  inClass?: boolean;
 };
 
 export type SharePaperSetOption = {
   id: string;
+  subjectId?: string | null;
+  subjectName?: string | null;
+  subjectCode?: string | null;
   title: string;
   academicYear: string | null;
   paperCount: number;
+  papers?: ClassPaper[];
 };
 
 export type ShareOptions = {
@@ -240,3 +269,67 @@ export type ProblemDetail = {
   status?: number;
   detail?: string;
 };
+
+export type PhysicsCategory =
+  | "mechanics"
+  | "oscillation_wave"
+  | "circuits_electromagnetism"
+  | "optics"
+  | "thermodynamics"
+  | "nuclear_quantum"
+  | "physics_true_false"
+  | "physics_short_answer";
+
+export type MathCategory =
+  | "linear"
+  | "quadratic"
+  | "system"
+  | "word_problem"
+  | "ai_challenge"
+  | PhysicsCategory
+  | "all";
+export type MathDifficulty = "easy" | "medium" | "hard";
+
+export type MathExercise = {
+  id: string;
+  category: string;
+  category_name: string;
+  difficulty: string;
+  title: string;
+  question: string;
+  hints: string[];
+  solution: string;
+  final_answer: string;
+  numeric_answer: string;
+  roots: number[];
+  options?: string[];
+  correct_option?: number;
+  plot_info?: Record<string, unknown> | null;
+  elo?: number;
+  eloRating?: number;
+  subject_name?: string;
+};
+
+export type MathEvaluateResult = {
+  is_correct: boolean;
+  score: number;
+  feedback: string;
+  user_answer: string;
+  correct_answer: string;
+  solution: string;
+};
+
+export type AiPredictModelInfo = {
+  target_formula: string;
+  exact_value: number;
+  ai_predicted_value: number;
+  error: number;
+  confidence: number;
+};
+
+export type AiPredictResponse = {
+  x: number;
+  linear_model: AiPredictModelInfo;
+  mlp_model: AiPredictModelInfo;
+};
+

@@ -10,7 +10,8 @@ public final class AiPracticeRules {
 
     public static final int MAX_QUESTION_COUNT = 99;
     public static final int DEFAULT_QUESTION_COUNT = 5;
-    public static final double MINUTES_PER_QUESTION = 2.5;
+    public static final int SECONDS_PER_QUESTION = 30;
+    public static final double MINUTES_PER_QUESTION = SECONDS_PER_QUESTION / 60.0;
 
     public record TrueFalseSlot(int groupNumber, int indexInGroup, String groupKey, String itemLabel) {}
 
@@ -22,7 +23,7 @@ public final class AiPracticeRules {
     }
 
     public static int durationMinutes(int questionCount) {
-        return (int) Math.round(clampQuestionCount(questionCount) * MINUTES_PER_QUESTION);
+        return Math.max(1, (int) Math.round(clampQuestionCount(questionCount) * MINUTES_PER_QUESTION));
     }
 
     public static int generatedQuestionCount(QuestionType type, int questionCount) {

@@ -14,16 +14,15 @@ public class AiClientConfiguration {
     @Primary
     ExamAiClient examAiClient(
             AiProperties properties,
+            PythonMathAiClient pythonMathAiClient,
             HeuristicExamAiClient heuristic,
             ObjectProvider<ChatClient.Builder> chatClientBuilder
     ) {
         if (!Boolean.TRUE.equals(properties.enabled())) {
             return heuristic;
         }
-        ChatClient.Builder builder = chatClientBuilder.getIfAvailable();
-        if (builder == null) {
-            return heuristic;
-        }
-        return new SpringAiExamClient(builder.build(), properties, heuristic);
+        // Use Python Math AI Client as preferred engine with fallback
+        return pythonMathAiClient;
     }
 }
+

@@ -48,13 +48,9 @@ export default async function HomePage() {
       </div>
       {teacher ? (
         <div className="mt-6 flex flex-wrap gap-3 text-sm">
-          <Link href="/questions/new" className="rounded-md bg-accent px-3 py-2 text-white hover:bg-accent-hover">
-            New question
-          </Link>
           <Link href="/papers/generate" className="rounded-md border border-line px-3 py-2 hover:border-accent">
             Generate paper
           </Link>
-          
         </div>
       ) : null}
     </>

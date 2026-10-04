@@ -20,6 +20,8 @@ Thumbs.db
 _ts10_probe.pdf
 _ts10_probe_q1.png
 _probe_word_capture.py
+__pycache__/
+*.pyc
 Backend/target/
 Frontend/node_modules/
 Frontend/.next/

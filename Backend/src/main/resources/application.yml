@@ -2,9 +2,10 @@ spring:
   application:
     name: exam-warehouse
   datasource:
-    url: ${DATABASE_URL:jdbc:postgresql://localhost:5432/exam_warehouse}
+    url: ${DATABASE_URL:jdbc:postgresql://localhost:5432/project_anhan_db}
     username: ${DATABASE_USERNAME:exam}
     password: ${DATABASE_PASSWORD:exam}
+
   jpa:
     open-in-view: false
     hibernate:
@@ -53,21 +54,25 @@ server:
 
 app:
   jwt:
-    secret: ${JWT_SECRET}
+    secret: ${JWT_SECRET:MDEyMzQ1Njc4OWFiY2RlZjAxMjM0NTY3ODlhYmNkZWY=}
     access-token-expiration: 15m
     refresh-token-expiration: 7d
   elo:
     default-rating: 1000
     k-factor: 24
   seed:
-    ts10-exam-set: ${SEED_TS10:true}
+    enabled: ${DEV_SEED_ENABLED:false}
+    ts10-exam-set: ${SEED_TS10:false}
     ts10-image-dir: ${TS10_IMAGE_DIR:}
+
   ai:
-    enabled: ${APP_AI_ENABLED:false}
+    enabled: ${APP_AI_ENABLED:true}
     model-name: ${OPENAI_MODEL:gpt-4o-mini}
+    math-service-url: ${MATH_AI_SERVICE_URL:http://localhost:8000}
 
 management:
   endpoints:
     web:
       exposure:
         include: health
+

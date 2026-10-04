@@ -73,7 +73,19 @@ public class User {
 
     public void applyElo(int newRating) {
         this.eloRating = newRating;
-        this.rankCode = RankCode.fromElo(newRating);
+        RankCode theoreticalRank = RankCode.fromElo(newRating);
+        if (this.rankCode == null) {
+            this.rankCode = theoreticalRank;
+        } else if (theoreticalRank.ordinal() < this.rankCode.ordinal()) {
+            // Demote rank if rating drops below rank minimum threshold
+            this.rankCode = theoreticalRank;
+        }
+    }
+
+    public void promoteTo(RankCode newRank) {
+        if (newRank != null && (this.rankCode == null || newRank.ordinal() > this.rankCode.ordinal())) {
+            this.rankCode = newRank;
+        }
     }
 
     public void disable() {

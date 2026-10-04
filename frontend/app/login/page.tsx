@@ -5,7 +5,10 @@ import Link from "next/link";
 export default function LoginPage() {
   return (
     <>
-      <PageHeader title="Log in" description="Teacher seed: teacher@exam.local / Teacher123!" />
+      <PageHeader
+        title="Log in"
+        description={"Teacher seed: teacher@exam.local / Teacher123!\nUser: student@exam.local / Student123!"}
+      />
       <LoginForm />
       <p className="mt-4 text-center text-sm text-muted">
         No account?{" "}

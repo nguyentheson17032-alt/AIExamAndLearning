@@ -10,6 +10,8 @@
     "test": "tsx --test lib/problem.test.ts lib/roles.test.ts lib/exam-steps.test.ts lib/exam-timer.test.ts lib/session.test.ts lib/format-datetime.test.ts lib/stem-text.test.ts lib/paper-generate.test.ts lib/paper-groups.test.ts lib/ai-practice.test.ts lib/correct-answer.test.ts lib/elo-history.test.ts lib/exam-bank.test.ts"
   },
   "dependencies": {
+    "@types/katex": "^0.16.8",
+    "katex": "^0.19.0",
     "next": "15.5.9",
     "react": "19.2.8",
     "react-dom": "19.2.8"

@@ -133,15 +133,26 @@ public class ClassroomService {
         UUID teacherId = classroom.getTeacher().getId();
         List<ClassPaperResponse> papers = paperRepository.findByAuthor_IdAndPaperSetIsNull(teacherId).stream()
                 .filter(paper -> !linked.contains(paper.getId()))
-                .map(ClassPaperResponse::from)
+                .map(paper -> ClassPaperResponse.from(paper, false))
                 .toList();
         List<SharePaperSetOption> paperSets = paperSetRepository.findByAuthor_IdOrderByTitleAsc(teacherId).stream()
-                .map(set -> new SharePaperSetOption(
-                        set.getId(),
-                        set.getTitle(),
-                        set.getAcademicYear(),
-                        (int) paperRepository.countByPaperSetId(set.getId())))
-                .filter(option -> option.paperCount() > 0 && setHasUnlinkedPaper(option.id(), linked))
+                .map(set -> {
+                    List<Paper> setPapers = paperRepository.findByPaperSetIdOrderByExamNumberAsc(set.getId());
+                    List<ClassPaperResponse> paperResponses = setPapers.stream()
+                            .map(paper -> ClassPaperResponse.from(paper, linked.contains(paper.getId())))
+                            .toList();
+                    return new SharePaperSetOption(
+                            set.getId(),
+                            set.getSubject() != null ? set.getSubject().getId() : null,
+                            set.getSubject() != null ? set.getSubject().getName() : null,
+                            set.getSubject() != null ? set.getSubject().getCode() : null,
+                            set.getTitle(),
+                            set.getAcademicYear(),
+                            setPapers.size(),
+                            paperResponses
+                    );
+                })
+                .filter(option -> option.paperCount() > 0 && option.papers().stream().anyMatch(p -> !p.inClass()))
                 .toList();
         return new ShareOptionsResponse(papers, paperSets);
     }

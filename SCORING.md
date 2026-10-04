@@ -73,32 +73,27 @@ Tổng điểm attempt = tổng `AttemptAnswer.score`. `maxScore` lấy từ `Pa
 
 ---
 
-## 2. Xếp hạng user (rank)
+## 2. Xếp hạng user (rank) & Chuỗi bài thi thăng hạng (Promotion Series)
 
-Rank **không độc lập**. Mỗi lần Elo đổi, `User.applyElo` gọi `RankCode.fromElo`.
+### 2.1 Bậc Rank và Ngưỡng Elo
+| Rank | Elo | Yêu cầu bài thi thăng hạng |
+|---|---|---|
+| `BRONZE` | &lt; 1000 | Mức tân thủ |
+| `SILVER` | 1000–1199 | Vượt qua **2 đề Easy 20 câu** (đúng $\ge 80\%$) từ Bronze |
+| `GOLD` | 1200–1399 | Vượt qua **2 đề Medium 20 câu** (đúng $\ge 80\%$) từ Silver |
+| `PLATINUM` | 1400–1599 | Vượt qua **2 đề Hard 15 câu** (đúng $\ge 80\%$) từ Gold |
+| `DIAMOND` | ≥ 1600 | Vượt qua **2 đề Hard 20 câu** (đúng $\ge 80\%$) từ Platinum |
 
-Nguồn: [`Backend/src/main/java/com/aiexam/learning/user/domain/RankCode.java`](Backend/src/main/java/com/aiexam/learning/user/domain/RankCode.java)
-
-| Rank | Elo |
-|---|---|
-| `BRONZE` | &lt; 1000 |
-| `SILVER` | 1000–1199 |
-| `GOLD` | 1200–1399 |
-| `PLATINUM` | 1400–1599 |
-| `DIAMOND` | ≥ 1600 |
-
-User mới: Elo **1000** → `SILVER` (`app.elo.default-rating` trong [`application.yml`](Backend/src/main/resources/application.yml), gán lúc đăng ký trong [`AuthService`](Backend/src/main/java/com/aiexam/learning/auth/domain/AuthService.java)).
-
-Lưu DB: `users.elo_rating`, `users.rank_code` — entity [`User.java`](Backend/src/main/java/com/aiexam/learning/user/domain/User.java).
+### 2.2 Quy tắc thăng hạng:
+- **Tích lũy Elo:** Khi Elo đạt ngưỡng của Rank kế tiếp, trạng thái **"Sẵn sàng thăng hạng"** được kích hoạt.
+- **Bài thi thăng hạng:** `POST /api/v1/me/promotion/start` sinh đề thi chuẩn theo độ khó và số lượng câu hỏi quy định.
+- **Tiêu chuẩn đỗ:** Mỗi bài thi cần đạt $\ge 80\%$ số câu đúng. Khi tích lũy đủ **2 bài đỗ**, học sinh chính thức được nâng cấp `rank_code`.
+- **Bảo lưu Rank:** Nếu Elo tăng vượt ngưỡng nhưng chưa thi đỗ chuỗi thăng hạng, Rank vẫn được giữ nguyên ở bậc hiện tại. Nếu Elo rơi sâu xuống dưới mức sàn của Rank, hệ thống sẽ giáng bậc tương ứng (`User.applyElo`).
 
 API / UI:
-
-- `GET /api/v1/me` — [`MeController`](Backend/src/main/java/com/aiexam/learning/user/api/MeController.java)
-- Rank sau attempt: `AttemptResponse.rankAfter` = `RankCode.fromElo(eloAfter)`
-- Header + trang Rank: [`frontend/components/app-shell.tsx`](frontend/components/app-shell.tsx), [`frontend/app/me/page.tsx`](frontend/app/me/page.tsx)
-- Type frontend: `RankCode` trong [`frontend/lib/types.ts`](frontend/lib/types.ts)
-
-Test ngưỡng: [`RankCodeTest.java`](Backend/src/test/java/com/aiexam/learning/user/domain/RankCodeTest.java)
+- `GET /api/v1/me/promotion` — Trạng thái chuỗi thăng hạng (`PromotionController`)
+- `POST /api/v1/me/promotion/start` — Bắt đầu bài thi thăng hạng (`PromotionController`)
+- UI: Card Thử Thách Thăng Hạng tại [`frontend/components/promotion-challenge-card.tsx`](frontend/components/promotion-challenge-card.tsx) trên trang Cá nhân [`frontend/app/me/page.tsx`](frontend/app/me/page.tsx).
 
 ---
 
@@ -117,26 +112,38 @@ Sàn Elo khi nộp bài: **100** (`EloService.applyAttemptResult`).
 
 Lịch sử: bảng `elo_events` — [`EloEvent.java`](Backend/src/main/java/com/aiexam/learning/elo/domain/EloEvent.java), lý do [`EloReason`](Backend/src/main/java/com/aiexam/learning/elo/domain/EloReason.java): `ATTEMPT_GRADED`, `AI_ADJUSTMENT`, `MANUAL`.
 
-### 3.1 Mọi đề đã chấm
+### 3.1 Cơ chế tính Elo nâng cao đa chiều (Advanced Multi-dimensional Elo Engine)
 
-Trong `AttemptService.submit`, đề thuộc bộ đề và đề giáo viên tạo dùng cùng một công thức trong [`EloCalculator.nextRating`](Backend/src/main/java/com/aiexam/learning/elo/domain/EloCalculator.java):
+Khi nộp bài trong `AttemptService.submit`, hệ thống gọi qua `EloService.applyAttemptResult` kết hợp 4 cơ chế nâng cao trong [`EloCalculator.java`](Backend/src/main/java/com/aiexam/learning/elo/domain/EloCalculator.java):
 
-```
-paperElo = round((targetEloMin + targetEloMax) / 2)
-scoreRatio = điểm / max          // Ts10Scoring.eloScore, kẹp 0–1
-expected = 1 / (1 + 10^((paperElo − userElo) / 400))
-Elo mới  = max(100, round(userElo + K × (scoreRatio − expected)))
-```
+1. **Cộng Elo theo độ khó và số câu làm đúng (Difficulty & Item-based Elo Gain)**:
+   - Với mỗi câu hỏi $i$ có điểm tối đa $p_i$, điểm đạt được $s_i$, tỷ lệ làm đúng $r_i = \frac{s_i}{p_i} \in [0, 1]$:
+     - **Đề / Câu Easy (BEGINNER):** Hệ số $C_i = 0.3$ (Ví dụ: 3 câu đúng = $+0.9$ Elo)
+     - **Đề / Câu Medium (INTERMEDIATE):** Hệ số $C_i = 0.4$ (Ví dụ: 20 câu đúng = $+8.0$ Elo)
+     - **Đề / Câu Hard (ADVANCED / EXPERT):** Hệ số $C_i = 0.5$ (Ví dụ: 20 câu đúng = $+10.0$ Elo)
 
-- `K` = 24 (`app.elo.k-factor`)
-- `paperElo` là mức giữa khoảng Elo giáo viên đặt trên đề. Đề TS10 import để 1000–1400 nên đối thủ là 1200. Elo từng câu không còn là đối thủ.
-- Điểm đúng bằng mức kỳ vọng thì Elo đứng yên. Cao hơn thì cộng, thấp hơn thì trừ.
-- Cùng mức Elo: 10/10 → +12, 5/10 → 0, 0/10 → −12.
-- Ví dụ 2.45/10, user 1244, đề 1000–1400: 1244 → 1236 (−8). Đề khó hơn user (ví dụ giữa khoảng 1600) thì cùng điểm 2.45 vẫn được cộng nhẹ.
+2. **Hệ số tương xứng trình độ (Level-Match Multiplier $M_{\text{match}}$)**:
+   - Ngăn người chơi rank cao làm đề quá dễ để farm điểm:
+     - Nếu $Q_{\text{elo}} \ge User_{\text{elo}}$: $M_{\text{match}} = 1.0$ ($100\%$ điểm).
+     - Nếu $Q_{\text{elo}} < User_{\text{elo}}$: $M_{\text{match}} = \max\left(0.05, \frac{2}{1 + 10^{(User_{\text{elo}} - Q_{\text{elo}}) / 400}}\right)$
+   - Elo cơ sở nhận được: $\Delta_{\text{raw}} = \sum (r_i \times C_i \times M_{\text{match}, i})$
 
-Gọi qua `EloService.applyAttemptResult`.
+3. **Streak Multiplier (Thưởng phong độ chuỗi bài tốt)**:
+   - Nếu bài thi đạt điểm cao ($S_{\text{total}} \ge 0.80$):
+     $M_{\text{streak}} = 1.0 + \min(0.25, 0.05 \times \text{recentStreaks})$ (thưởng tối đa $+25\%$).
 
-`ERD.md` ghi “Elo uses `score / 10`”: đó là `scoreRatio` so với mức Elo của đề.
+4. **Time-Efficiency Multiplier (Thưởng tốc độ làm bài chuẩn xác)**:
+   - Nếu làm bài đạt điểm khá giỏi ($S_{\text{total}} \ge 0.70$) và thời gian hoàn thành $t_{\text{spent}}$ nằm trong khoảng $30\% - 80\%$ thời lượng đề:
+     $M_{\text{time}} = 1.0 + 0.15 \times \left(1.0 - \frac{r_t - 0.30}{0.50}\right)$ (thưởng từ $0\%$ đến $+15\%$).
+
+5. **Tổng hợp biến thiên & Cập nhật**:
+   - $\Delta = \Delta_{\text{raw}} \times M_{\text{streak}} \times M_{\text{time}}$
+   - $\text{Elo mới} = \max(100, \text{round}(userElo + \Delta))$
+
+5. **Dynamic Item Calibration (Hiệu chỉnh Elo 2 chiều cho câu hỏi)**:
+   - Mỗi lần học sinh làm bài, độ khó của từng câu hỏi được tự động điều chỉnh nhẹ ($K_{\text{item}} = 4$):
+     $\Delta Q_i = \text{round}(4 \times ((1 - r_i) - (1 - E_i)))$
+   - Giúp câu hỏi quá nhiều người làm sai sẽ tăng Elo (khó lên), và câu hỏi ai cũng làm đúng sẽ giảm Elo (dễ đi).
 
 ### 3.2 AI chỉnh Elo thêm
 

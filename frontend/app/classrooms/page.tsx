@@ -14,7 +14,7 @@ export default async function ClassroomsPage() {
   return (
     <>
       <PageHeader
-        title="Lớp học"
+        title="Classes"
         description={
           teacher
             ? "Tạo lớp, thêm học sinh bằng display name, rồi đưa bài bạn đã tạo vào lớp."

@@ -35,9 +35,11 @@ class ExamWarehouseApplicationTest {
     void typedProperties_holdConfiguredValues() {
         var jwt = new JwtProperties("secret", Duration.ofMinutes(15), Duration.ofDays(7));
         var elo = new EloProperties(1000, 24);
-        var ai = new AiProperties(false, "heuristic");
+        var ai = new AiProperties(false, "heuristic", "http://localhost:8000", "http://localhost:8001");
         assertThat(jwt.accessTokenExpiration()).isEqualTo(Duration.ofMinutes(15));
         assertThat(elo.kFactor()).isEqualTo(24);
         assertThat(ai.enabled()).isFalse();
+        assertThat(ai.physicsServiceUrl()).isEqualTo("http://localhost:8001");
+
     }
 }

@@ -34,7 +34,7 @@ public interface PaperRepository extends JpaRepository<Paper, UUID> {
 
     Page<Paper> findByStatus(ContentStatus status, Pageable pageable);
 
-    @EntityGraph(attributePaths = "subject")
+    @EntityGraph(attributePaths = {"subject", "items", "items.question"})
     List<Paper> findByAuthor_IdAndPaperSetIsNull(UUID authorId);
 
     List<Paper> findByPaperSet_Id(UUID paperSetId);

@@ -24,5 +24,7 @@ public interface PaperSetRepository extends JpaRepository<PaperSet, UUID> {
 
     Optional<PaperSet> findByAcademicYearAndTitle(String academicYear, String title);
 
+    Optional<PaperSet> findFirstBySubject_IdAndTitle(UUID subjectId, String title);
+
     boolean existsByAcademicYearAndTitle(String academicYear, String title);
 }

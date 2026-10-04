@@ -3,5 +3,6 @@ package com.aiexam.learning.paper.domain;
 public enum PaperKind {
     EXAM,
     ASSIGNMENT,
-    PRACTICE
+    PRACTICE,
+    PROMOTION
 }

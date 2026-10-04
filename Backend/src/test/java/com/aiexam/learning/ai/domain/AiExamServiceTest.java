@@ -89,14 +89,15 @@ class AiExamServiceTest {
         when(jobRepository.save(any())).thenAnswer(invocation -> invocation.getArgument(0));
         PaperResponse paper = mock(PaperResponse.class);
         when(paper.id()).thenReturn(UUID.randomUUID());
+        int expectedDuration = AiPracticeRules.durationMinutes(2);
         when(paperService.generateBankPractice(
-                eq(userId), eq(subjectId), any(), any(), eq(2), eq(5), eq(100), eq(3000)
+                eq(userId), eq(subjectId), any(), any(), eq(2), eq(expectedDuration), eq(100), eq(3000)
         )).thenReturn(paper);
 
         aiExamService.generatePracticePaper(userId, new PracticeGenerateRequest(subjectId, 2, 99));
 
         verify(paperService).generateBankPractice(
-                eq(userId), eq(subjectId), any(), any(), eq(2), eq(5), eq(100), eq(3000));
+                eq(userId), eq(subjectId), any(), any(), eq(2), eq(expectedDuration), eq(100), eq(3000));
         verifyNoInteractions(examAiClient);
     }
 }

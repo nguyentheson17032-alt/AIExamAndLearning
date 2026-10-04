@@ -203,6 +203,10 @@ public class Question {
         this.status = ContentStatus.ARCHIVED;
     }
 
+    public void updateEloRating(int newEloRating) {
+        this.eloRating = newEloRating;
+    }
+
     public boolean isObjective() {
         return type == QuestionType.MULTIPLE_CHOICE || type == QuestionType.TRUE_FALSE;
     }

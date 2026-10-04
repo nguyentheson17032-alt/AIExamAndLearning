@@ -25,7 +25,8 @@ export default async function AttemptSolutionsPage({ params }: { params: Promise
       <ol className="space-y-4">
         {items.map((item, index) => {
           const answer = answerByQuestion.get(item.questionId);
-          const selected = item.question.choices.find((choice) => choice.id === answer?.selectedChoiceId);
+          const choices = item.question.choices ?? [];
+          const selected = choices.find((choice) => choice.id === answer?.selectedChoiceId);
           const snapshot = storedImageSrc(item.question.stemImageId, item.question.stem);
           const previous = index > 0
             ? storedImageSrc(items[index - 1].question.stemImageId, items[index - 1].question.stem)
@@ -48,7 +49,7 @@ export default async function AttemptSolutionsPage({ params }: { params: Promise
               </p>
               {showStem ? (
                 <p className="mt-2">
-                  <StemText text={promptStem(item.question.stem, item.question.choices.length > 0)} imageId={item.question.stemImageId} />
+                  <StemText text={promptStem(item.question.stem, choices.length > 0)} imageId={item.question.stemImageId} />
                 </p>
               ) : null}
               <p className="mt-3 text-sm">Bài làm: {submittedWork(selected, answer?.textAnswer)}</p>

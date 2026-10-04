@@ -1,5 +1,6 @@
 "use client";
 
+import { AiMathBankGenerator } from "@/components/ai-math-bank-generator";
 import { PageHeader } from "@/components/page-header";
 import { PaperCreateForm } from "@/components/paper-create-form";
 import type { SubjectBank } from "@/lib/exam-bank";
@@ -29,17 +30,21 @@ export function QuestionExamCreator({
   return (
     <>
       <PageHeader
-        title="Câu hỏi"
+        title="Questions"
         description="Bấm môn, rồi bấm Phần I, II hoặc III để xem câu hỏi trong bộ đề đã tải lên."
       >
-        <button
-          type="button"
-          className="rounded-md bg-accent px-3 py-2 text-sm text-white hover:bg-accent-hover"
-          onClick={() => setOpen(true)}
-        >
-          Tạo đề
-        </button>
+        <div className="flex items-center gap-2">
+          <AiMathBankGenerator subjects={subjects} />
+          <button
+            type="button"
+            className="rounded-md bg-accent px-3 py-2 text-sm text-white hover:bg-accent-hover"
+            onClick={() => setOpen(true)}
+          >
+            Tạo đề
+          </button>
+        </div>
       </PageHeader>
+
       {children}
       {open ? (
         <section ref={panel} className="mt-10 space-y-4">

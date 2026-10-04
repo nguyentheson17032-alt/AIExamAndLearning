@@ -13,6 +13,7 @@ import com.aiexam.learning.user.domain.UserRole;
 import com.aiexam.learning.user.infrastructure.UserRepository;
 import io.jsonwebtoken.JwtException;
 import lombok.RequiredArgsConstructor;
+import org.springframework.security.core.AuthenticationException;
 import org.springframework.security.authentication.AuthenticationManager;
 import org.springframework.security.authentication.UsernamePasswordAuthenticationToken;
 import org.springframework.security.crypto.password.PasswordEncoder;
@@ -56,9 +57,13 @@ public class AuthService {
 
     @Transactional
     public AuthResponse login(LoginRequest request) {
-        authenticationManager.authenticate(
-                new UsernamePasswordAuthenticationToken(request.email().trim().toLowerCase(), request.password())
-        );
+        try {
+            authenticationManager.authenticate(
+                    new UsernamePasswordAuthenticationToken(request.email().trim().toLowerCase(), request.password())
+            );
+        } catch (AuthenticationException ex) {
+            throw new BusinessRuleException("INVALID_CREDENTIALS", "Invalid credentials");
+        }
         User user = userRepository.findByEmail(request.email().trim().toLowerCase())
                 .orElseThrow(() -> new BusinessRuleException("INVALID_CREDENTIALS", "Invalid credentials"));
         return issueTokens(user, UUID.randomUUID());

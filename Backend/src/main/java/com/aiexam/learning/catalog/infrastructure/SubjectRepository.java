@@ -10,5 +10,9 @@ public interface SubjectRepository extends JpaRepository<Subject, UUID> {
 
     Optional<Subject> findByCode(String code);
 
+    Optional<Subject> findByNameIgnoreCase(String name);
+
+    Optional<Subject> findFirstByOrderByNameAsc();
+
     boolean existsByCode(String code);
 }

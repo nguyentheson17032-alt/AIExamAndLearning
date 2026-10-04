@@ -142,6 +142,40 @@ public class PaperService {
         return PaperResponse.from(paperRepository.save(paper), true);
     }
 
+    @Transactional
+    public Paper generatePromotionPaper(
+            User author,
+            Subject subject,
+            String title,
+            String description,
+            int questionCount,
+            int duration,
+            int preferredMin,
+            int preferredMax
+    ) {
+        List<BankPracticePicker.Unit> picked = pickBankUnits(subject.getId(), questionCount, preferredMin, preferredMax);
+        if (picked.isEmpty()) {
+            throw new BusinessRuleException(
+                    "NO_PROMOTION_QUESTIONS",
+                    "Not enough published bank questions for promotion exam."
+            );
+        }
+        Paper paper = Paper.create(
+                author,
+                subject,
+                title,
+                description,
+                PaperKind.PROMOTION,
+                PaperSource.AI_GENERATED,
+                duration,
+                preferredMin,
+                preferredMax,
+                ContentStatus.PUBLISHED
+        );
+        addBankUnits(paper, picked);
+        return paperRepository.save(paper);
+    }
+
     private Paper newPracticePaper(
             User author,
             Subject subject,

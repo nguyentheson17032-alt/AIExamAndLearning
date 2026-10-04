@@ -33,4 +33,8 @@ public interface AttemptRepository extends JpaRepository<Attempt, UUID> {
     List<Attempt> findByPaper_IdIn(Collection<UUID> paperIds);
 
     void deleteByPaper_IdIn(Collection<UUID> paperIds);
+
+    long countByUser_IdAndStatus(UUID userId, AttemptStatus status);
+
+    List<Attempt> findTop5ByUser_IdAndStatusOrderByGradedAtDesc(UUID userId, AttemptStatus status);
 }
