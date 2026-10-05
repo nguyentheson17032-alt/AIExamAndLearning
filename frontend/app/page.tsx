@@ -5,9 +5,15 @@ import { isTeacher } from "@/lib/session";
 import type { Attempt, PageResponse, Paper, Subject, UserProfile } from "@/lib/types";
 import Link from "next/link";
 
+import { redirect } from "next/navigation";
+
 export default async function HomePage() {
   const user = await requireUser();
+  if (user.role === "ADMIN") {
+    redirect("/admin");
+  }
   const teacher = isTeacher(user);
+
   const [profile, subjects, papers, attempts] = await Promise.all([
     backendFetch<UserProfile>("/api/v1/me"),
     teacher

@@ -71,6 +71,13 @@ public class ClassroomService {
                             memberRepository.countByClassroom_Id(member.getClassroom().getId())))
                     .toList();
         }
+        if (viewer.getRole() == UserRole.ADMIN) {
+            return classroomRepository.findAllByOrderByCreatedAtDesc().stream()
+                    .map(classroom -> ClassroomResponse.from(
+                            classroom,
+                            memberRepository.countByClassroom_Id(classroom.getId())))
+                    .toList();
+        }
         return classroomRepository.findByTeacher_IdOrderByCreatedAtDesc(viewer.getId()).stream()
                 .map(classroom -> ClassroomResponse.from(
                         classroom,

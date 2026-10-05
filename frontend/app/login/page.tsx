@@ -7,8 +7,9 @@ export default function LoginPage() {
     <>
       <PageHeader
         title="Log in"
-        description={"Teacher seed: teacher@exam.local / Teacher123!\nUser: student@exam.local / Student123!"}
+        description={"Admin: admin@exam.local / Admin123!\nTeacher: teacher@exam.local / Teacher123!\nUser: student@exam.local / Student123!"}
       />
+
       <LoginForm />
       <p className="mt-4 text-center text-sm text-muted">
         No account?{" "}

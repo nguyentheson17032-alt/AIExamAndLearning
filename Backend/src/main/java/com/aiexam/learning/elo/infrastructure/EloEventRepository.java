@@ -12,6 +12,9 @@ public interface EloEventRepository extends JpaRepository<EloEvent, UUID> {
 
     Page<EloEvent> findByUserIdOrderByCreatedAtDesc(UUID userId, Pageable pageable);
 
+    @org.springframework.data.jpa.repository.EntityGraph(attributePaths = {"attempt", "attempt.paper"})
+    java.util.List<EloEvent> findByUser_IdOrderByCreatedAtDesc(UUID userId);
+
     void deleteByAttempt_IdIn(Collection<UUID> attemptIds);
 
     void deleteByQuestion_IdIn(Collection<UUID> questionIds);

@@ -32,6 +32,10 @@ public class DevDataSeeder implements ApplicationRunner {
 
     @Override
     public void run(ApplicationArguments args) {
+        if (userRepository.findByEmail("admin@exam.local").isEmpty()) {
+            userRepository.save(User.register(
+                    "admin@exam.local", passwordEncoder.encode("Admin123!"), "Administrator", UserRole.ADMIN, 1500));
+        }
         if (userRepository.findByEmail("teacher@exam.local").isEmpty()) {
             userRepository.save(User.register(
                     "teacher@exam.local", passwordEncoder.encode("Teacher123!"), "Teacher", UserRole.TEACHER, 1200));
@@ -40,6 +44,7 @@ public class DevDataSeeder implements ApplicationRunner {
             userRepository.save(User.register(
                     "student@exam.local", passwordEncoder.encode("Student123!"), "Student", UserRole.STUDENT, 1000));
         }
+
         if (!Boolean.TRUE.equals(seedProperties.enabled())) {
             return;
         }

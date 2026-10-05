@@ -91,4 +91,17 @@ public class User {
     public void disable() {
         this.enabled = false;
     }
+
+    public void enable() {
+        this.enabled = true;
+    }
+
+    public void setEnabled(boolean enabled) {
+        this.enabled = enabled;
+    }
+
+    public void setRole(UserRole role) {
+        this.role = role;
+    }
 }
+

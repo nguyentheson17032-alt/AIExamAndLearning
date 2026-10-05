@@ -11,38 +11,74 @@ export function AppShell({
   user: SessionUser | null;
   children: React.ReactNode;
 }) {
-  const teacher = user?.role === "TEACHER" || user?.role === "ADMIN";
-  const links: NavItem[] = user
-    ? [
+  const isAdmin = user?.role === "ADMIN";
+  const isTeacher = user?.role === "TEACHER";
+
+  let links: NavItem[] = [];
+
+  if (user) {
+    if (isAdmin) {
+      links = [];
+    } else if (isTeacher) {
+      links = [
         { href: "/", label: "Home" },
-        ...(teacher ? [{ href: "/ai-tutor", label: "AI Practice" }] : []),
+        { href: "/ai-tutor", label: "AI Practice" },
         { href: "/subjects", label: "Subjects" },
         { href: "/classrooms", label: "Classes" },
         { href: "/me", label: "Rank" },
-      ]
-
-    : [
-        { href: "/login", label: "Log in" },
-        { href: "/register", label: "Register" },
       ];
+    } else {
+      // Student
+      links = [
+        { href: "/", label: "Home" },
+        { href: "/subjects", label: "Subjects" },
+        { href: "/classrooms", label: "Classes" },
+        { href: "/me", label: "Rank" },
+      ];
+    }
+  } else {
+    links = [
+      { href: "/login", label: "Log in" },
+      { href: "/register", label: "Register" },
+    ];
+  }
+
+  const brandHref = isAdmin ? "/admin" : user ? "/" : "/login";
 
   return (
     <div className="min-h-full">
-      <header className="border-b border-line bg-card">
+      <header className="border-b border-line bg-card shadow-xs">
         <div className="mx-auto flex max-w-6xl items-center justify-between gap-6 px-6 py-4">
-          <Link href={user ? "/" : "/login"} className="text-lg font-semibold tracking-tight">
-            Exam Warehouse
+          <Link href={brandHref} className="flex items-center gap-2 text-lg font-semibold tracking-tight text-foreground">
+            {isAdmin && (
+              <span className="flex h-6 w-6 items-center justify-center rounded-md bg-accent text-white font-black text-xs">
+                AD
+              </span>
+            )}
+            <span>{isAdmin ? "Admin Portal" : "Exam Warehouse"}</span>
           </Link>
           <nav className="flex flex-wrap items-center gap-4 text-sm">
-            {links.map((item) => (
-              <Link key={item.href} href={item.href} className="text-muted hover:text-foreground">
-                {item.label}
-              </Link>
-            ))}
+            {links.map((item) => {
+              const isAdminLink = item.href === "/admin";
+              return (
+                <Link
+                  key={item.href}
+                  href={item.href}
+                  className={
+                    isAdminLink
+                      ? "rounded-md bg-accent/10 px-2.5 py-1 font-semibold text-accent border border-accent/25 hover:bg-accent hover:text-white transition-all shadow-xs"
+                      : "text-muted hover:text-foreground transition-colors"
+                  }
+                >
+                  {item.label}
+                </Link>
+              );
+            })}
+
             {user ? (
               <span className="flex items-center gap-3 text-muted">
                 <span>
-                  {user.displayName} · {user.rankCode} {user.eloRating}
+                  {user.displayName} {isAdmin ? "(Admin)" : `· ${user.rankCode} ${user.eloRating}`}
                 </span>
                 <LogoutButton />
               </span>

@@ -157,6 +157,10 @@ public class Paper {
         this.status = status;
     }
 
+    public void setStatus(ContentStatus status) {
+        this.status = status;
+    }
+
     public BigDecimal maxScore() {
         return items.stream()
                 .map(PaperQuestion::getPoints)

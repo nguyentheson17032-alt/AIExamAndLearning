@@ -36,5 +36,11 @@ public interface AttemptRepository extends JpaRepository<Attempt, UUID> {
 
     long countByUser_IdAndStatus(UUID userId, AttemptStatus status);
 
+    long countByUser_Id(UUID userId);
+
+    @EntityGraph(attributePaths = {"paper", "paper.subject"})
+    List<Attempt> findByUser_IdOrderByStartedAtDesc(UUID userId);
+
     List<Attempt> findTop5ByUser_IdAndStatusOrderByGradedAtDesc(UUID userId, AttemptStatus status);
 }
+

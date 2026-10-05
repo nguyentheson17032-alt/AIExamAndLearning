@@ -44,7 +44,10 @@ public class SecurityConfig {
                         .hasAnyRole("TEACHER", "ADMIN")
                         .requestMatchers("/api/v1/ai/questions/**", "/api/v1/ai/papers/**")
                         .hasAnyRole("TEACHER", "ADMIN")
+                        .requestMatchers("/api/v1/admin/**")
+                        .hasAnyRole("TEACHER", "ADMIN")
                         .anyRequest().authenticated())
+
                 .exceptionHandling(errors -> errors
                         .authenticationEntryPoint((request, response, failure) -> {
                             response.setStatus(401);

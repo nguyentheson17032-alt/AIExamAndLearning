@@ -14,7 +14,10 @@ public interface ClassroomPaperRepository extends JpaRepository<ClassroomPaper, 
 
     boolean existsByClassroom_IdAndPaper_Id(UUID classroomId, UUID paperId);
 
+    int countByClassroom_Id(UUID classroomId);
+
     void deleteByClassroom_IdAndPaper_Id(UUID classroomId, UUID paperId);
+
 
     @Query("select cp.paper.id from ClassroomPaper cp where cp.classroom.id = :classroomId")
     List<UUID> findPaperIdsByClassroomId(@Param("classroomId") UUID classroomId);

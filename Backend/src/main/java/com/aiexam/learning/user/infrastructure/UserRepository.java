@@ -15,4 +15,10 @@ public interface UserRepository extends JpaRepository<User, UUID> {
     boolean existsByEmail(String email);
 
     List<User> findByDisplayNameIgnoreCaseAndRoleAndEnabled(String displayName, UserRole role, boolean enabled);
+
+    List<User> findByRoleOrderByCreatedAtDesc(UserRole role);
+
+    List<User> findByRole(UserRole role);
+
+    long countByRole(UserRole role);
 }

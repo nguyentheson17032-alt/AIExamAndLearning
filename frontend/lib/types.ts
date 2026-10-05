@@ -331,3 +331,125 @@ export type AiPredictResponse = {
   mlp_model: AiPredictModelInfo;
 };
 
+export type AdminStats = {
+  totalStudents: number;
+  totalTeachers: number;
+  totalClassrooms: number;
+  totalQuestions: number;
+  totalPapers: number;
+  totalAiExams: number;
+  totalAttempts: number;
+  rankDistribution: Record<string, number>;
+};
+
+export type AdminStudent = {
+  id: string;
+  email: string;
+  displayName: string;
+  role: UserRole;
+  eloRating: number;
+  rankCode: RankCode;
+  enabled: boolean;
+  createdAt: string;
+  totalAttempts: number;
+};
+
+export type AdminTeacher = {
+  id: string;
+  email: string;
+  displayName: string;
+  role: UserRole;
+  enabled: boolean;
+  createdAt: string;
+  classroomsCount: number;
+  papersCount: number;
+};
+
+export type AdminClassroom = {
+  id: string;
+  name: string;
+  teacherId: string;
+  teacherName: string;
+  memberCount: number;
+  paperCount: number;
+  createdAt: string;
+};
+
+export type AdminAiExam = {
+  id: string;
+  title: string;
+  subjectId: string | null;
+  subjectName: string;
+  kind: PaperKind;
+  source: PaperSource;
+  durationMinutes: number;
+  targetEloMin: number;
+  targetEloMax: number;
+  questionCount: number;
+  status: ContentStatus;
+  createdAt: string;
+  authorName: string;
+};
+
+export type AdminStudentAttemptSummary = {
+  id: string;
+  paperId: string;
+  paperTitle: string;
+  subjectName: string;
+  score: number | null;
+  maxScore: number | null;
+  eloBefore: number | null;
+  eloAfter: number | null;
+  eloDelta: number | null;
+  status: AttemptStatus;
+  startedAt: string;
+  submittedAt: string | null;
+  gradedAt: string | null;
+};
+
+export type AdminStudentEloHistorySummary = {
+  id: string;
+  ratingBefore: number;
+  ratingAfter: number;
+  delta: number;
+  reason: EloReason;
+  createdAt: string;
+  attemptId: string | null;
+  paperTitle: string | null;
+};
+
+export type AdminStudentDetail = AdminStudent & {
+  attempts: AdminStudentAttemptSummary[];
+  eloHistory: AdminStudentEloHistorySummary[];
+};
+
+export type AdminClassMemberSummary = {
+  studentId: string;
+  displayName: string;
+  email: string;
+  eloRating: number;
+  rankCode: RankCode;
+  joinedAt: string;
+};
+
+export type AdminClassPaperSummary = {
+  paperId: string;
+  title: string;
+  subjectName: string;
+  durationMinutes: number;
+  questionCount: number;
+  status: ContentStatus;
+  assignedAt: string;
+};
+
+export type AdminClassroomDetail = {
+  id: string;
+  name: string;
+  teacherId: string;
+  teacherName: string;
+  createdAt: string;
+  members: AdminClassMemberSummary[];
+  papers: AdminClassPaperSummary[];
+};
+
+

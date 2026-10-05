@@ -16,4 +16,10 @@ public interface ClassroomRepository extends JpaRepository<Classroom, UUID> {
 
     @EntityGraph(attributePaths = "teacher")
     List<Classroom> findByTeacher_IdOrderByCreatedAtDesc(UUID teacherId);
+
+    long countByTeacher_Id(UUID teacherId);
+
+    @EntityGraph(attributePaths = "teacher")
+    List<Classroom> findAllByOrderByCreatedAtDesc();
 }
+

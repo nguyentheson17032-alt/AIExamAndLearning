@@ -2,7 +2,9 @@ package com.aiexam.learning.paper.infrastructure;
 
 import com.aiexam.learning.paper.domain.Paper;
 import com.aiexam.learning.paper.domain.PaperKind;
+import com.aiexam.learning.paper.domain.PaperSource;
 import com.aiexam.learning.question.domain.ContentStatus;
+
 import org.springframework.data.domain.Page;
 import org.springframework.data.domain.Pageable;
 import org.springframework.data.jpa.repository.EntityGraph;
@@ -146,8 +148,16 @@ public interface PaperRepository extends JpaRepository<Paper, UUID> {
             @Param("status") ContentStatus status,
             Pageable pageable);
 
-    @EntityGraph(attributePaths = {"items", "items.question"})
+    @EntityGraph(attributePaths = {"items", "items.question", "subject", "author"})
     List<Paper> findByPaperSetIdOrderByExamNumberAsc(UUID paperSetId);
 
     long countByPaperSetId(UUID paperSetId);
+
+    @EntityGraph(attributePaths = {"subject", "author", "items"})
+    List<Paper> findBySourceOrderByCreatedAtDesc(PaperSource source);
+
+    long countBySource(PaperSource source);
+
+    long countByAuthor_Id(UUID authorId);
 }
+
